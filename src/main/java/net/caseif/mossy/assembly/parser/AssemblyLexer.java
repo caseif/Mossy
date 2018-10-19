@@ -48,6 +48,7 @@ public class AssemblyLexer {
     private static final Pattern RE_Y               = Pattern.compile("^Y");
     private static final Pattern RE_LABEL_DEF       = Pattern.compile("^([A-z][A-z0-9_]*):");
     private static final Pattern RE_LABEL_REF       = Pattern.compile("^([A-z][A-z0-9_]*)");
+    private static final Pattern RE_DIRECTIVE       = Pattern.compile("^\\.([A-z]+)");
     private static final Pattern RE_HEX_QWORD       = Pattern.compile("^\\$([0-9A-F]{8})");
     private static final Pattern RE_HEX_DWORD       = Pattern.compile("^\\$([0-9A-F]{4})");
     private static final Pattern RE_HEX_WORD        = Pattern.compile("^\\$([0-9A-F]{2})");
@@ -68,6 +69,7 @@ public class AssemblyLexer {
             .put(RE_Y, Token.Type.Y)
             .put(RE_LABEL_DEF, Token.Type.LABEL_DEF)
             .put(RE_LABEL_REF, Token.Type.LABEL_REF)
+            .put(RE_DIRECTIVE, Token.Type.DIRECTIVE)
             .put(RE_HEX_QWORD, Token.Type.HEX_QWORD)
             .put(RE_HEX_DWORD, Token.Type.HEX_DWORD)
             .put(RE_HEX_WORD, Token.Type.HEX_WORD)

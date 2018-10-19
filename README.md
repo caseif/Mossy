@@ -10,7 +10,9 @@ An assembler for the 6502, written in Java.
 ### Pending
 
 - Most directives
-  - Namely .org and .db/.dw
+  - Namely `.db`/`.dw`, `.include`, and `.macro`
+- Named constants
+- Arithmetic operations in constant expressions
 
 ### License
 

@@ -75,7 +75,7 @@ public class ProgramAssembler {
     private byte[] generateBytecode(Map<String, Integer> labelDict) throws ParserException {
         ByteArrayOutputStream intermediate = new ByteArrayOutputStream();
 
-        final int OFFSET = 0x8000; //TODO: read this from a .org directive
+        int orgOffset = 0;
 
         int curOffset = 0;
 
@@ -124,7 +124,7 @@ public class ProgramAssembler {
 
                         if (instrStmt.getMnemonic().getType() == Mnemonic.Type.JUMP
                                 && instrStmt.getAddressingMode() == AddressingMode.ABS) {
-                            operand += OFFSET;
+                            operand += orgOffset;
                         }
 
                         switch (instrStmt.getAddressingMode().getLength() - 1) {
@@ -146,6 +146,27 @@ public class ProgramAssembler {
 
                     break;
                 }
+                case DIRECTIVE:
+                    Statement.DirectiveStatement dirStmt = (Statement.DirectiveStatement) stmt;
+
+                    switch (dirStmt.getDirective()) {
+                        case ORG:
+                            if (!dirStmt.getParam().isPresent()) {
+                                throw new ParserException("ORG directive requires a parameter.", dirStmt.getLine());
+                            }
+
+                            if (!(dirStmt.getParam().get() instanceof Integer)) {
+                                throw new ParserException("ORG directive requires a number parameter.", dirStmt.getLine());
+                            }
+
+                            orgOffset = (int) dirStmt.getParam().get();
+
+                            break;
+                        default:
+                            throw new AssertionError("Unhandled case " + dirStmt.getDirective().name());
+                    }
+
+                    break;
                 // skip label definitions since we already built a dictionary
                 case LABEL_DEF:
                 case COMMENT:
@@ -187,6 +208,7 @@ public class ProgramAssembler {
 
                     break;
                 }
+                case DIRECTIVE:
                 case COMMENT: {
                     continue;
                 }

@@ -55,6 +55,7 @@ public abstract class Statement {
     public enum Type {
         INSTRUCTION(InstructionStatement.class),
         LABEL_DEF(LabelDefinitionStatement.class),
+        DIRECTIVE(DirectiveStatement.class),
         COMMENT(CommentStatement.class);
 
         private final Constructor<? extends Statement> ctor;
@@ -170,6 +171,33 @@ public abstract class Statement {
 
         public String getId() {
             return id;
+        }
+
+    }
+
+    public class DirectiveStatement extends Statement {
+
+        private final Directive type;
+        private final Object param;
+
+        DirectiveStatement(Object[] values, int line) {
+            super(Type.DIRECTIVE, line);
+
+            this.type = (Directive) values[0];
+
+            if (values.length > 1) {
+                this.param = values[1];
+            } else {
+                this.param = null;
+            }
+        }
+
+        public Directive getDirective() {
+            return type;
+        }
+
+        public Optional<Object> getParam() {
+            return Optional.ofNullable(param);
         }
 
     }

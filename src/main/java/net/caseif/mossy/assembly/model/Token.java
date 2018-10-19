@@ -63,6 +63,7 @@ public class Token {
     public enum Type implements ExpressionPart {
         LABEL_DEF,
         LABEL_REF,
+        DIRECTIVE(Directive::valueOfInsensitive),
         MNEMONIC(Mnemonic::valueOf),
         HEX_QWORD(PARSE_HEX),
         HEX_DWORD(PARSE_HEX),

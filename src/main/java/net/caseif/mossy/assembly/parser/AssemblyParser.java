@@ -31,6 +31,7 @@ import static net.caseif.mossy.assembly.model.Token.Type.BIN_WORD;
 import static net.caseif.mossy.assembly.model.Token.Type.COMMA;
 import static net.caseif.mossy.assembly.model.Token.Type.COMMENT;
 import static net.caseif.mossy.assembly.model.Token.Type.DEC_WORD;
+import static net.caseif.mossy.assembly.model.Token.Type.DIRECTIVE;
 import static net.caseif.mossy.assembly.model.Token.Type.HEX_DWORD;
 import static net.caseif.mossy.assembly.model.Token.Type.HEX_QWORD;
 import static net.caseif.mossy.assembly.model.Token.Type.HEX_WORD;
@@ -74,6 +75,8 @@ public class AssemblyParser {
 
         addExpressionSyntax(Expression.Type.LABEL_REF,                      LABEL_REF);
 
+        addExpressionSyntax(Expression.Type.DIRECTIVE,                      DIRECTIVE);
+
         addExpressionSyntax(Expression.Type.QWORD, 4,                       HEX_QWORD);
         addExpressionSyntax(Expression.Type.QWORD, 4,                       BIN_QWORD);
 
@@ -105,6 +108,8 @@ public class AssemblyParser {
 
         addStatementSyntax(Statement.Type.COMMENT,                          Expression.Type.COMMENT);
         addStatementSyntax(Statement.Type.LABEL_DEF,                        Expression.Type.LABEL_DEF);
+        addStatementSyntax(Statement.Type.DIRECTIVE,                        Expression.Type.DIRECTIVE, Expression.Type.CONSTANT);
+        addStatementSyntax(Statement.Type.DIRECTIVE,                        Expression.Type.DIRECTIVE);
         addStatementSyntax(Statement.Type.INSTRUCTION,                      Expression.Type.MNEMONIC, Expression.Type.IMM_VALUE);
         addStatementSyntax(Statement.Type.INSTRUCTION,                      Expression.Type.MNEMONIC, Expression.Type.LABEL_REF);
         addStatementSyntax(Statement.Type.INSTRUCTION,                      Expression.Type.MNEMONIC, Expression.Type.TARGET);
