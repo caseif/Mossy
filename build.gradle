@@ -1,0 +1,102 @@
+plugins {
+    id 'java'
+    id 'maven'
+    id 'idea'
+    id 'eclipse'
+
+    id 'jacoco'
+    id 'net.minecrell.licenser' version '0.4.1'
+    id 'com.github.johnrengelman.shadow' version '2.0.4'
+}
+
+defaultTasks 'clean', 'updateLicenses', 'build', 'jacocoTestReport', 'shadowJar'
+
+group = 'net.caseif.mossy'
+version = '0.1.0-SNAPSHOT'
+
+// Extended project information
+ext.projectName = 'mossy'
+ext.inceptionYear = '2018'
+ext.packaging = 'jar'
+
+sourceCompatibility = '1.8'
+targetCompatibility = '1.8'
+
+configurations {
+    testCompile.extendsFrom(shadow)
+}
+
+// Read source files using UTF-8
+tasks.withType(JavaCompile) {
+    options.encoding = 'UTF-8'
+}
+
+license {
+    header getRootProject().file('HEADER.txt')
+    exclude '**/lib/**/*.java'
+
+    ext {
+        year = '2018'
+        author = 'Max Roncace'
+        email = 'mproncace@gmail.com'
+    }
+}
+
+repositories {
+    mavenCentral()
+
+    maven {
+        name 'caseif'
+        url 'http://repo.caseif.net/content/groups/public/'
+    }
+}
+
+dependencies {
+    shadow 'net.caseif.moslib:moslib:1.0.0'
+
+    shadow 'com.google.guava:guava:26.0-jre'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter-api:5.3.1'
+
+    testCompile 'org.junit.jupiter:junit-jupiter-engine:5.3.1'
+}
+
+jar.manifest.mainAttributes(
+        'Implementation-Title': name,
+        'Implementation-Version': version
+)
+
+test {
+    useJUnitPlatform()
+}
+
+jar {
+    classifier = 'base'
+    manifest {
+        attributes(
+                'Implementation-Title': project.name,
+                'Implementation-Version': version,
+                'Main-Class': 'net.caseif.mossy.Main'
+        )
+    }
+}
+
+task sourceJar(type: Jar) {
+    from sourceSets.main.java
+    from sourceSets.main.resources
+    classifier = 'sources'
+}
+
+shadowJar {
+    classifier = null
+    configurations = [project.configurations.shadow]
+}
+
+artifacts {
+    archives shadowJar
+    archives sourceJar
+}
+
+wrapper {
+    gradleVersion = '4.10.2'
+}
