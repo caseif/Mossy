@@ -44,10 +44,9 @@ public class AssemblyLexer {
 
     private static final Pattern RE_WHITESPACE      = Pattern.compile("^\\s+");
     private static final Pattern RE_MNEMONIC        = Pattern.compile("^([A-Z]{3})(?=\\s|$)");
-    private static final Pattern RE_X               = Pattern.compile("^X");
-    private static final Pattern RE_Y               = Pattern.compile("^Y");
-    private static final Pattern RE_LABEL_DEF       = Pattern.compile("^([A-z][A-z0-9_]*):");
-    private static final Pattern RE_LABEL_REF       = Pattern.compile("^([A-z][A-z0-9_]*)");
+    private static final Pattern RE_X               = Pattern.compile("^X(?![A-z0-9])");
+    private static final Pattern RE_Y               = Pattern.compile("^Y(?![A-z0-9])");
+    private static final Pattern RE_IDENTIFIER      = Pattern.compile("^([A-z][A-z0-9_]*)");
     private static final Pattern RE_DIRECTIVE       = Pattern.compile("^\\.([A-z]+)");
     private static final Pattern RE_HEX_QWORD       = Pattern.compile("^\\$([0-9A-F]{8})");
     private static final Pattern RE_HEX_DWORD       = Pattern.compile("^\\$([0-9A-F]{4})");
@@ -57,6 +56,7 @@ public class AssemblyLexer {
     private static final Pattern RE_BIN_DWORD       = Pattern.compile("^%([01]{16})");
     private static final Pattern RE_BIN_WORD        = Pattern.compile("^%([01]{8})");
     private static final Pattern RE_COMMENT         = Pattern.compile("^;.*$");
+    private static final Pattern RE_COLON           = Pattern.compile("^:");
     private static final Pattern RE_COMMA           = Pattern.compile("^,");
     private static final Pattern RE_POUND           = Pattern.compile("^#");
     private static final Pattern RE_LEFT_PAREN      = Pattern.compile("^\\(");
@@ -67,8 +67,7 @@ public class AssemblyLexer {
             .put(RE_MNEMONIC, Token.Type.MNEMONIC)
             .put(RE_X, Token.Type.X)
             .put(RE_Y, Token.Type.Y)
-            .put(RE_LABEL_DEF, Token.Type.LABEL_DEF)
-            .put(RE_LABEL_REF, Token.Type.LABEL_REF)
+            .put(RE_IDENTIFIER, Token.Type.IDENTIFIER)
             .put(RE_DIRECTIVE, Token.Type.DIRECTIVE)
             .put(RE_HEX_QWORD, Token.Type.HEX_QWORD)
             .put(RE_HEX_DWORD, Token.Type.HEX_DWORD)
@@ -77,6 +76,7 @@ public class AssemblyLexer {
             .put(RE_BIN_QWORD, Token.Type.BIN_QWORD)
             .put(RE_BIN_DWORD, Token.Type.BIN_DWORD)
             .put(RE_BIN_WORD, Token.Type.BIN_WORD)
+            .put(RE_COLON, Token.Type.COLON)
             .put(RE_COMMA, Token.Type.COMMA)
             .put(RE_POUND, Token.Type.POUND)
             .put(RE_LEFT_PAREN, Token.Type.LEFT_PAREN)
@@ -123,8 +123,8 @@ public class AssemblyLexer {
         return Optional.empty();
     }
 
-    public static List<Token> lex(InputStream input) throws IOException, LexerException {
-        List<Token> tokens = new ArrayList<>();
+    public static List<List<Token>> lex(InputStream input) throws IOException, LexerException {
+        List<List<Token>> tokens = new ArrayList<>();
 
         StringBuilder lineBuilder = new StringBuilder();
 
@@ -132,9 +132,12 @@ public class AssemblyLexer {
 
         int b;
         while ((b = input.read()) != -1) {
-
             if (b == '\n') {
-                tokens.addAll(tokenize(lineBuilder.toString(), curLine));
+                List<Token> line = new ArrayList<>(tokenize(lineBuilder.toString(), curLine));
+
+                if (!line.isEmpty()) {
+                    tokens.add(line);
+                }
 
                 lineBuilder.setLength(0);
 

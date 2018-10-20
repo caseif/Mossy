@@ -41,6 +41,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,11 +54,15 @@ public class ProgramAssembler {
     public void read(InputStream input) throws IOException, LexerException, ParserException {
         System.out.println("Lexing assembly...");
 
-        List<Token> tokenized = AssemblyLexer.lex(input);
+        List<List<Token>> tokenized = AssemblyLexer.lex(input);
 
         System.out.println("Parsing assembly...");
 
-        statements = AssemblyParser.parse(tokenized);
+        statements = new ArrayList<>();
+
+        for (List<Token> line : tokenized) {
+            statements.addAll(AssemblyParser.parse(line));
+        }
     }
 
     public void assemble(OutputStream output) throws IOException, ParserException {

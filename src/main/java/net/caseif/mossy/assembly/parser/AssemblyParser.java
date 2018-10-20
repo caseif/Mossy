@@ -28,6 +28,7 @@ package net.caseif.mossy.assembly.parser;
 import static net.caseif.mossy.assembly.model.Token.Type.BIN_DWORD;
 import static net.caseif.mossy.assembly.model.Token.Type.BIN_QWORD;
 import static net.caseif.mossy.assembly.model.Token.Type.BIN_WORD;
+import static net.caseif.mossy.assembly.model.Token.Type.COLON;
 import static net.caseif.mossy.assembly.model.Token.Type.COMMA;
 import static net.caseif.mossy.assembly.model.Token.Type.COMMENT;
 import static net.caseif.mossy.assembly.model.Token.Type.DEC_WORD;
@@ -35,8 +36,7 @@ import static net.caseif.mossy.assembly.model.Token.Type.DIRECTIVE;
 import static net.caseif.mossy.assembly.model.Token.Type.HEX_DWORD;
 import static net.caseif.mossy.assembly.model.Token.Type.HEX_QWORD;
 import static net.caseif.mossy.assembly.model.Token.Type.HEX_WORD;
-import static net.caseif.mossy.assembly.model.Token.Type.LABEL_DEF;
-import static net.caseif.mossy.assembly.model.Token.Type.LABEL_REF;
+import static net.caseif.mossy.assembly.model.Token.Type.IDENTIFIER;
 import static net.caseif.mossy.assembly.model.Token.Type.LEFT_PAREN;
 import static net.caseif.mossy.assembly.model.Token.Type.MNEMONIC;
 import static net.caseif.mossy.assembly.model.Token.Type.POUND;
@@ -71,9 +71,9 @@ public class AssemblyParser {
 
         addExpressionSyntax(Expression.Type.MNEMONIC,                       MNEMONIC);
 
-        addExpressionSyntax(Expression.Type.LABEL_DEF,                      LABEL_DEF);
+        addExpressionSyntax(Expression.Type.LABEL_DEF,                      IDENTIFIER, COLON);
 
-        addExpressionSyntax(Expression.Type.LABEL_REF,                      LABEL_REF);
+        addExpressionSyntax(Expression.Type.LABEL_REF,                      IDENTIFIER);
 
         addExpressionSyntax(Expression.Type.DIRECTIVE,                      DIRECTIVE);
 
@@ -150,6 +150,11 @@ public class AssemblyParser {
 
     // matches whatever statement can be found next
     private static Pair<Statement, Integer> matchNextStatement(List<Token> curTokens) throws ParserException {
+        System.out.println("next token: " + curTokens.get(0).getType());
+        if (curTokens.size() > 1) {
+            System.out.println("next next token: " + curTokens.get(1).getType());
+        }
+
         for (Statement.Type goal : STATEMENT_SYNTAXES.keySet()) {
             // try to match against a specific goal
             Optional<Pair<Statement, Integer>> res = matchStatement(curTokens, goal);
@@ -256,6 +261,11 @@ public class AssemblyParser {
         Object value = null;
 
         int line = -1;
+
+        if (curTokens.size() < pattern.size()) {
+            // not enough tokens to fulfill the pattern so just fail
+            return Optional.empty();
+        }
 
         for (ExpressionPart nextPart : pattern) {
             if (nextPart instanceof Token.Type) {
