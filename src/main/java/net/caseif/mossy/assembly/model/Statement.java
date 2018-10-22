@@ -32,6 +32,7 @@ import net.caseif.moslib.Mnemonic;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Arrays;
 import java.util.Optional;
 
 public abstract class Statement {
@@ -55,6 +56,7 @@ public abstract class Statement {
     public enum Type {
         INSTRUCTION(InstructionStatement.class),
         LABEL_DEF(LabelDefinitionStatement.class),
+        NAMED_CONSTANT_DEF(ConstantDefinitionStatement.class),
         DIRECTIVE(DirectiveStatement.class),
         COMMENT(CommentStatement.class);
 
@@ -87,12 +89,14 @@ public abstract class Statement {
         private final AddressingMode addrMode;
         private final int operand;
         private final int operandLength;
-        private final String labelRef;
+        private final String constantRef;
 
         InstructionStatement(Object[] values, int line) {
             super(Type.INSTRUCTION, line);
 
             this.mnemonic = (Mnemonic) values[0];
+
+            System.out.println(Arrays.toString(values));
 
             if (values.length == 3) {
                 operand = (int) values[1];
@@ -101,26 +105,17 @@ public abstract class Statement {
                     addrMode = (AddressingMode) values[2];
 
                     operandLength = 0;
-                    labelRef = null;
+                    constantRef = null;
                 } else {
                     operandLength = (int) values[2];
 
                     addrMode = AddressingMode.IMM;
-                    labelRef = null;
+                    constantRef = null;
                 }
             } else if (values.length == 2) {
-                labelRef = (String) values[1];
+                constantRef = (String) values[1];
 
-                switch (mnemonic.getType()) {
-                    case JUMP:
-                        addrMode = AddressingMode.ABS;
-                        break;
-                    case BRANCH:
-                        addrMode = AddressingMode.REL;
-                        break;
-                    default:
-                        throw new IllegalArgumentException("Labels may only be used with jump/branch instructions.");
-                }
+                addrMode = mnemonic.getType() == Mnemonic.Type.BRANCH ? AddressingMode.REL : AddressingMode.ABS;
 
                 operand = 0;
                 operandLength = 0;
@@ -129,7 +124,7 @@ public abstract class Statement {
 
                 operand = 0;
                 operandLength = 0;
-                labelRef = null;
+                constantRef = null;
             }
         }
 
@@ -153,24 +148,52 @@ public abstract class Statement {
             return operandLength;
         }
 
-        public Optional<String> getLabelRef() {
-            return Optional.ofNullable(labelRef);
+        public Optional<String> getConstantRef() {
+            return Optional.ofNullable(constantRef);
         }
 
     }
 
     public class LabelDefinitionStatement extends Statement {
 
-        private final String id;
+        private final String name;
 
         LabelDefinitionStatement(Object[] values, int line) {
             super(Type.LABEL_DEF, line);
 
-            this.id = (String) values[0];
+            this.name = (String) values[0];
         }
 
-        public String getId() {
-            return id;
+        public String getName() {
+            return name;
+        }
+
+    }
+
+    public class ConstantDefinitionStatement extends Statement {
+
+        private final String name;
+        private final int value;
+        private final int size;
+
+        ConstantDefinitionStatement(Object[] values, int line) {
+            super(Type.NAMED_CONSTANT_DEF, line);
+
+            this.name = (String) values[0];
+            this.value = (int) values[1];
+            this.size = (int) values[2];
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public int getValue() {
+            return value;
+        }
+
+        public int getSize() {
+            return size;
         }
 
     }

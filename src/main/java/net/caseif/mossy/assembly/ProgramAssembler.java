@@ -28,10 +28,12 @@ package net.caseif.mossy.assembly;
 import net.caseif.moslib.AddressingMode;
 import net.caseif.moslib.Instruction;
 import net.caseif.moslib.Mnemonic;
+import net.caseif.mossy.assembly.model.NamedConstant;
 import net.caseif.mossy.assembly.model.Statement;
 import net.caseif.mossy.assembly.model.Token;
 import net.caseif.mossy.assembly.parser.AssemblyLexer;
 import net.caseif.mossy.assembly.parser.AssemblyParser;
+import net.caseif.mossy.util.exception.AssemblerException;
 import net.caseif.mossy.util.exception.LexerException;
 import net.caseif.mossy.util.exception.ParserException;
 
@@ -65,10 +67,10 @@ public class ProgramAssembler {
         }
     }
 
-    public void assemble(OutputStream output) throws IOException, ParserException {
+    public void assemble(OutputStream output) throws IOException, AssemblerException, ParserException {
         Preconditions.checkState(statements != null, "No program loaded.");
 
-        Map<String, Integer> labelDict = buildLabelDictionary();
+        Map<String, NamedConstant> labelDict = buildLabelDictionary();
 
         byte[] bytecode = generateBytecode(labelDict);
 
@@ -77,44 +79,41 @@ public class ProgramAssembler {
         output.close();
     }
 
-    private byte[] generateBytecode(Map<String, Integer> labelDict) throws ParserException {
+    private byte[] generateBytecode(Map<String, NamedConstant> labelDict) throws AssemblerException {
         ByteArrayOutputStream intermediate = new ByteArrayOutputStream();
 
         int orgOffset = 0;
 
         int curOffset = 0;
 
+        Map<String, NamedConstant> constants = new HashMap<>();
+
+        constants.putAll(labelDict);
+
         for (Statement stmt : statements) {
             switch (stmt.getType()) {
                 case INSTRUCTION: {
                     Statement.InstructionStatement instrStmt = (Statement.InstructionStatement) stmt;
 
-                    Optional<Instruction> instrOpt = Instruction.lookup(instrStmt.getMnemonic(), instrStmt.getAddressingMode());
-
-                    if (!instrOpt.isPresent()) {
-                        throw new ParserException(String.format(
-                                "Instruction %s cannot be used with addressing mode %s.",
-                                instrStmt.getMnemonic(), instrStmt.getAddressingMode()
-                        ), instrStmt.getLine());
-                    }
-
-                    intermediate.write((byte) instrOpt.get().getOpcode());
-
-                    curOffset += 1;
-
                     int operand;
 
-                    if (instrStmt.getLabelRef().isPresent()) {
-                        int realTarget = labelDict.get(instrStmt.getLabelRef().get());
+                    AddressingMode realAddrMode = instrStmt.getAddressingMode();
+
+                    if (instrStmt.getConstantRef().isPresent()) {
+                        int realValue = constants.get(instrStmt.getConstantRef().get()).getValue();
 
                         if (instrStmt.getAddressingMode() == AddressingMode.REL) {
                             // the offset is relative to the address following the current instruction
-                            // we've already incremented the offset by 1 for the opcode, and the
-                            // addressing mode is always relative (1 byte operand), so we can just
-                            // add 1 to the current offset to move it past the operand.
-                            operand = realTarget - (curOffset + 1);
+                            // since the addressing mode is always relative (1 byte operand), we can
+                            // just add 2 to the current offset to move it past the operand.
+                            operand = realValue - (curOffset + 2);
                         } else {
-                            operand = realTarget;
+                            operand = realValue;
+
+                            // if it's only one word, then we need to use zero-page mode
+                            if (constants.get(instrStmt.getConstantRef().get()).getSize() == 1) {
+                                realAddrMode = AddressingMode.ZRP;
+                            }
                         }
                     } else if (instrStmt.getAddressingMode() != AddressingMode.IMP) {
                         operand = instrStmt.getOperand();
@@ -122,17 +121,30 @@ public class ProgramAssembler {
                         operand = -1;
                     }
 
-                    if (instrStmt.getAddressingMode() != AddressingMode.IMP) {
+                    Optional<Instruction> instrOpt = Instruction.lookup(instrStmt.getMnemonic(), realAddrMode);
+
+                    if (!instrOpt.isPresent()) {
+                        throw new AssemblerException(String.format(
+                                "Instruction %s cannot be used with addressing mode %s.",
+                                instrStmt.getMnemonic(), realAddrMode
+                        ), instrStmt.getLine());
+                    }
+
+                    intermediate.write((byte) instrOpt.get().getOpcode());
+
+                    curOffset += 1;
+
+                    if (realAddrMode != AddressingMode.IMP) {
                         // we only need to adjust the operand to account for the offset if
                         // we're jumping to an absolute address. we should keep it intact
                         // if we're using an indirect value.
 
                         if (instrStmt.getMnemonic().getType() == Mnemonic.Type.JUMP
-                                && instrStmt.getAddressingMode() == AddressingMode.ABS) {
+                                && realAddrMode == AddressingMode.ABS) {
                             operand += orgOffset;
                         }
 
-                        switch (instrStmt.getAddressingMode().getLength() - 1) {
+                        switch (realAddrMode.getLength() - 1) {
                             case 1:
                                 intermediate.write((byte) operand);
 
@@ -151,17 +163,17 @@ public class ProgramAssembler {
 
                     break;
                 }
-                case DIRECTIVE:
+                case DIRECTIVE: {
                     Statement.DirectiveStatement dirStmt = (Statement.DirectiveStatement) stmt;
 
                     switch (dirStmt.getDirective()) {
                         case ORG:
                             if (!dirStmt.getParam().isPresent()) {
-                                throw new ParserException("ORG directive requires a parameter.", dirStmt.getLine());
+                                throw new AssemblerException("ORG directive requires a parameter.", dirStmt.getLine());
                             }
 
                             if (!(dirStmt.getParam().get() instanceof Integer)) {
-                                throw new ParserException("ORG directive requires a number parameter.", dirStmt.getLine());
+                                throw new AssemblerException("ORG directive requires a number parameter.", dirStmt.getLine());
                             }
 
                             orgOffset = (int) dirStmt.getParam().get();
@@ -172,6 +184,22 @@ public class ProgramAssembler {
                     }
 
                     break;
+                }
+                case NAMED_CONSTANT_DEF: {
+                    Statement.ConstantDefinitionStatement constDefStmt = (Statement.ConstantDefinitionStatement) stmt;
+
+                    String name = constDefStmt.getName();
+
+                    if (constants.containsKey(name)) {
+                        throw new AssemblerException(String.format("Constant %s defined multiple times.", name), stmt.getLine());
+                    }
+
+                    NamedConstant nc = new NamedConstant(name, constDefStmt.getValue(), constDefStmt.getSize());
+
+                    constants.put(name, nc);
+
+                    break;
+                }
                 // skip label definitions since we already built a dictionary
                 case LABEL_DEF:
                 case COMMENT:
@@ -185,8 +213,8 @@ public class ProgramAssembler {
     }
 
     // helper method for reading and indexing all label definitions
-    private Map<String, Integer> buildLabelDictionary() throws ParserException {
-        Map<String, Integer> labelDict = new HashMap<>();
+    private Map<String, NamedConstant> buildLabelDictionary() throws ParserException {
+        Map<String, NamedConstant> labelDict = new HashMap<>();
 
         int pc = 0;
 
@@ -204,15 +232,16 @@ public class ProgramAssembler {
                 case LABEL_DEF: {
                     Statement.LabelDefinitionStatement lblStmt = (Statement.LabelDefinitionStatement) stmt;
 
-                    if (labelDict.containsKey(lblStmt.getId())) {
-                        throw new ParserException("Found duplicate label " + lblStmt.getId() + "!", lblStmt.getLine());
+                    if (labelDict.containsKey(lblStmt.getName())) {
+                        throw new ParserException("Found duplicate label " + lblStmt.getName() + "!", lblStmt.getLine());
                     }
 
                     // add the label to the dictionary - no need to increment the PC
-                    labelDict.put(lblStmt.getId(), pc);
+                    labelDict.put(lblStmt.getName(), new NamedConstant(lblStmt.getName(), pc, 2));
 
                     break;
                 }
+                case NAMED_CONSTANT_DEF:
                 case DIRECTIVE:
                 case COMMENT: {
                     continue;

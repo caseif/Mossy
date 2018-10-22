@@ -25,9 +25,11 @@
 
 package net.caseif.mossy.util.exception;
 
-public class LexerException extends Exception {
+public class LexerException extends InvalidAssemblyException {
+
     public LexerException(String line, int lineNum, int col, Throwable cause) {
-        super(String.format("Failed to lex assembly near %d,%d.\n\n%s", lineNum, col, printProblemLine(line, col)), cause);
+        super(String.format("Failed to lex assembly near %d,%d.\n\n%s", lineNum, col, printProblemLine(line, col)),
+                cause, lineNum);
     }
 
     public LexerException(String line, int lineNum, int col) {

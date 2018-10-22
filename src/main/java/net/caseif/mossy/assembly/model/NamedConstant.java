@@ -23,22 +23,29 @@
  * THE SOFTWARE.
  */
 
-package net.caseif.mossy.util.exception;
+package net.caseif.mossy.assembly.model;
 
-public class ParserException extends InvalidAssemblyException {
-    public ParserException() {
+public class NamedConstant {
+
+    private final String name;
+    private final int value;
+    private final int size;
+
+    public NamedConstant(String name, int value, int size) {
+        this.name = name;
+        this.value = value;
+        this.size = size;
     }
 
-    public ParserException(String message, int line) {
-        super(message, line);
+    public String getName() {
+        return name;
     }
 
-    public ParserException(String message, Throwable cause, int line) {
-        super(message, cause, line);
+    public int getValue() {
+        return value;
     }
 
-    public ParserException(Throwable cause, int line) {
-        super(cause, line);
+    public int getSize() {
+        return size;
     }
-
 }

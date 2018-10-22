@@ -25,17 +25,20 @@
 
 package net.caseif.mossy.assembly.model;
 
+import java.util.List;
+import java.util.Objects;
+
 import javax.annotation.Nullable;
 
 public class Expression<T> {
 
     private final TypeWithMetadata<T> type;
-    private final Object value;
+    private final List<Object> values;
     private final int line;
 
-    public Expression(TypeWithMetadata<T> type, @Nullable Object value, int line) {
+    public Expression(TypeWithMetadata<T> type, List<Object> values, int line) {
         this.type = type;
-        this.value = value;
+        this.values = values;
         this.line = line;
     }
 
@@ -43,8 +46,8 @@ public class Expression<T> {
         return type;
     }
 
-    public Object getValue() {
-        return value;
+    public List<Object> getValues() {
+        return values;
     }
 
     public int getLine() {
@@ -56,6 +59,7 @@ public class Expression<T> {
         TARGET,
         IMM_VALUE,
         LABEL_DEF,
+        NAMED_CONSTANT_DEF,
         LABEL_REF,
         DIRECTIVE,
         QWORD,
@@ -90,6 +94,18 @@ public class Expression<T> {
 
         public T getMetadata() {
             return metadata;
+        }
+
+        @Override
+        public boolean equals(Object other) {
+            return other instanceof TypeWithMetadata
+                    && type == ((TypeWithMetadata) other).type
+                    && Objects.equals(metadata, ((TypeWithMetadata) other).metadata);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(TypeWithMetadata.class, type, metadata);
         }
     }
 

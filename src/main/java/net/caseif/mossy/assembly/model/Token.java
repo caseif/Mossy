@@ -29,6 +29,7 @@ import net.caseif.moslib.Mnemonic;
 
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 
 import javax.annotation.Nullable;
 
@@ -61,38 +62,59 @@ public class Token {
     }
 
     public enum Type implements ExpressionPart {
-        DIRECTIVE(Directive::valueOfInsensitive),
-        MNEMONIC(Mnemonic::valueOf),
-        IDENTIFIER,
-        HEX_QWORD(PARSE_HEX),
-        HEX_DWORD(PARSE_HEX),
-        HEX_WORD(PARSE_HEX),
-        DEC_WORD(PARSE_DEC),
-        BIN_QWORD(PARSE_BIN),
-        BIN_DWORD(PARSE_BIN),
-        BIN_WORD(PARSE_BIN),
-        COMMENT,
-        COLON,
-        COMMA,
-        EQUALS,
-        POUND,
-        X,
-        Y,
-        LEFT_PAREN,
-        RIGHT_PAREN;
+        COMMENT(";.*$"),
+        MNEMONIC("([A-Z]{3})(?=\\s|$)", Mnemonic::valueOf),
+        X("X(?![A-z0-9])"),
+        Y("Y(?![A-z0-9])"),
+        IDENTIFIER("([A-z][A-z0-9_]*)"),
+        DIRECTIVE("\\.([A-z]+)", Directive::valueOfInsensitive),
+        HEX_QWORD("\\$([0-9A-F]{8})", PARSE_HEX),
+        HEX_DWORD("\\$([0-9A-F]{4})", PARSE_HEX),
+        HEX_WORD("\\$([0-9A-F]{2})", PARSE_HEX),
+        DEC_WORD("([0-9]{1,3})", PARSE_DEC),
+        BIN_QWORD("%([01]{32})", PARSE_BIN),
+        BIN_DWORD("%([01]{16})", PARSE_BIN),
+        BIN_WORD("%([01]{8})", PARSE_BIN),
+        COLON(":"),
+        COMMA(","),
+        EQUALS("="),
+        POUND("#"),
+        LEFT_PAREN("\\("),
+        RIGHT_PAREN("\\)");
 
+        private final Pattern regex;
         private final Function<String, ?> valueAdapter;
 
-        Type(Function<String, ?> valueAdapter) {
+        Type(String regex, Function<String, ?> valueAdapter) {
+            this.regex = Pattern.compile("^" + regex);
             this.valueAdapter = valueAdapter;
         }
 
-        Type() {
-            this(Function.identity());
+        Type(String regex) {
+            this(regex, Function.identity());
+        }
+
+        public Pattern getRegex() {
+            return regex;
         }
 
         public Object adaptValue(String val) {
             return valueAdapter.apply(val);
+        }
+
+        public Token createToken(String valueStr, int lineNum) {
+            Object value = null;
+
+            if (valueStr != null) {
+                try {
+                    value = adaptValue(valueStr);
+                } catch (Throwable t) {
+                    throw new IllegalArgumentException(String.format("Failed to adapt value %s for token type %s.",
+                            valueStr, name()), t);
+                }
+            }
+
+            return new Token(this, value, lineNum);
         }
     }
 

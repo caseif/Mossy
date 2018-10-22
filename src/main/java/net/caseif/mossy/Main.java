@@ -26,6 +26,8 @@
 package net.caseif.mossy;
 
 import net.caseif.mossy.assembly.ProgramAssembler;
+import net.caseif.mossy.util.exception.AssemblerException;
+import net.caseif.mossy.util.exception.InvalidAssemblyException;
 import net.caseif.mossy.util.exception.LexerException;
 import net.caseif.mossy.util.exception.ParserException;
 
@@ -52,13 +54,14 @@ public class Main {
 
         try {
             assemble(inputPath, outputPath);
-        } catch (IOException | LexerException | ParserException ex) {
+        } catch (IOException | InvalidAssemblyException ex) {
             ex.printStackTrace();
             System.err.println("Failed to assemble program.");
         }
     }
 
-    private static void assemble(Path inputPath, @Nullable Path outputPath) throws IOException, LexerException, ParserException {
+    private static void assemble(Path inputPath, @Nullable Path outputPath)
+            throws IOException, InvalidAssemblyException  {
         if (!Files.exists(inputPath)) {
             throw new IOException("No such file " + inputPath.toString() + ".");
         }

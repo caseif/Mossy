@@ -29,13 +29,10 @@ import net.caseif.mossy.assembly.model.Token;
 import net.caseif.mossy.util.exception.LexerException;
 import net.caseif.mossy.util.tuple.Pair;
 
-import com.google.common.collect.ImmutableMap;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -43,45 +40,6 @@ import java.util.regex.Pattern;
 public class AssemblyLexer {
 
     private static final Pattern RE_WHITESPACE      = Pattern.compile("^\\s+");
-    private static final Pattern RE_MNEMONIC        = Pattern.compile("^([A-Z]{3})(?=\\s|$)");
-    private static final Pattern RE_X               = Pattern.compile("^X(?![A-z0-9])");
-    private static final Pattern RE_Y               = Pattern.compile("^Y(?![A-z0-9])");
-    private static final Pattern RE_IDENTIFIER      = Pattern.compile("^([A-z][A-z0-9_]*)");
-    private static final Pattern RE_DIRECTIVE       = Pattern.compile("^\\.([A-z]+)");
-    private static final Pattern RE_HEX_QWORD       = Pattern.compile("^\\$([0-9A-F]{8})");
-    private static final Pattern RE_HEX_DWORD       = Pattern.compile("^\\$([0-9A-F]{4})");
-    private static final Pattern RE_HEX_WORD        = Pattern.compile("^\\$([0-9A-F]{2})");
-    private static final Pattern RE_DEC_WORD        = Pattern.compile("^([0-9]{1,3})");
-    private static final Pattern RE_BIN_QWORD       = Pattern.compile("^%([01]{32})");
-    private static final Pattern RE_BIN_DWORD       = Pattern.compile("^%([01]{16})");
-    private static final Pattern RE_BIN_WORD        = Pattern.compile("^%([01]{8})");
-    private static final Pattern RE_COMMENT         = Pattern.compile("^;.*$");
-    private static final Pattern RE_COLON           = Pattern.compile("^:");
-    private static final Pattern RE_COMMA           = Pattern.compile("^,");
-    private static final Pattern RE_POUND           = Pattern.compile("^#");
-    private static final Pattern RE_LEFT_PAREN      = Pattern.compile("^\\(");
-    private static final Pattern RE_RIGHT_PAREN     = Pattern.compile("^\\)");
-
-    private static final ImmutableMap<Pattern, Token.Type> PATTERN_MAP = ImmutableMap.<Pattern, Token.Type>builder()
-            .put(RE_COMMENT, Token.Type.COMMENT)
-            .put(RE_MNEMONIC, Token.Type.MNEMONIC)
-            .put(RE_X, Token.Type.X)
-            .put(RE_Y, Token.Type.Y)
-            .put(RE_IDENTIFIER, Token.Type.IDENTIFIER)
-            .put(RE_DIRECTIVE, Token.Type.DIRECTIVE)
-            .put(RE_HEX_QWORD, Token.Type.HEX_QWORD)
-            .put(RE_HEX_DWORD, Token.Type.HEX_DWORD)
-            .put(RE_HEX_WORD, Token.Type.HEX_WORD)
-            .put(RE_DEC_WORD, Token.Type.DEC_WORD)
-            .put(RE_BIN_QWORD, Token.Type.BIN_QWORD)
-            .put(RE_BIN_DWORD, Token.Type.BIN_DWORD)
-            .put(RE_BIN_WORD, Token.Type.BIN_WORD)
-            .put(RE_COLON, Token.Type.COLON)
-            .put(RE_COMMA, Token.Type.COMMA)
-            .put(RE_POUND, Token.Type.POUND)
-            .put(RE_LEFT_PAREN, Token.Type.LEFT_PAREN)
-            .put(RE_RIGHT_PAREN, Token.Type.RIGHT_PAREN)
-            .build();
 
     public static Optional<Pair<Token, Integer>> nextToken(String line, int pos, int lineNum) {
         int skipped = 0;
@@ -95,8 +53,8 @@ public class AssemblyLexer {
             substr = substr.substring(skipped);
         }
 
-        for (Map.Entry<Pattern, Token.Type> e : PATTERN_MAP.entrySet()) {
-            Matcher m = e.getKey().matcher(substr);
+        for (Token.Type token : Token.Type.values()) {
+            Matcher m = token.getRegex().matcher(substr);
 
             if (!m.find()) {
                 continue;
@@ -104,20 +62,9 @@ public class AssemblyLexer {
 
             int len = m.group(0).length();
 
-            Object val;
+            String valueStr = m.groupCount() > 0 ? m.group(1) : null;
 
-            if (m.groupCount() > 0) {
-                try {
-                    val = e.getValue().adaptValue(m.group(1));
-                } catch (Throwable t) {
-                    throw new IllegalArgumentException(String.format("Failed to adapt value %s for token type %s.",
-                            m.group(1), e.getValue().name()), t);
-                }
-            } else {
-                val = null;
-            }
-
-            return Optional.of(Pair.of(new Token(e.getValue(), val, lineNum), len + skipped));
+            return Optional.of(Pair.of(token.createToken(valueStr, lineNum), len + skipped));
         }
 
         return Optional.empty();

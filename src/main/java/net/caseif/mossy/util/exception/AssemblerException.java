@@ -25,19 +25,19 @@
 
 package net.caseif.mossy.util.exception;
 
-public class ParserException extends InvalidAssemblyException {
-    public ParserException() {
+public class AssemblerException extends InvalidAssemblyException {
+    public AssemblerException() {
     }
 
-    public ParserException(String message, int line) {
+    public AssemblerException(String message, int line) {
         super(message, line);
     }
 
-    public ParserException(String message, Throwable cause, int line) {
+    public AssemblerException(String message, Throwable cause, int line) {
         super(message, cause, line);
     }
 
-    public ParserException(Throwable cause, int line) {
+    public AssemblerException(Throwable cause, int line) {
         super(cause, line);
     }
 

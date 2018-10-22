@@ -33,6 +33,7 @@ import static net.caseif.mossy.assembly.model.Token.Type.COMMA;
 import static net.caseif.mossy.assembly.model.Token.Type.COMMENT;
 import static net.caseif.mossy.assembly.model.Token.Type.DEC_WORD;
 import static net.caseif.mossy.assembly.model.Token.Type.DIRECTIVE;
+import static net.caseif.mossy.assembly.model.Token.Type.EQUALS;
 import static net.caseif.mossy.assembly.model.Token.Type.HEX_DWORD;
 import static net.caseif.mossy.assembly.model.Token.Type.HEX_QWORD;
 import static net.caseif.mossy.assembly.model.Token.Type.HEX_WORD;
@@ -61,6 +62,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import javax.annotation.Nullable;
+
 public class AssemblyParser {
 
     private static final Map<Expression.TypeWithMetadata<?>, Set<ImmutableList<ExpressionPart>>> EXPRESSION_SYNTAXES = new LinkedHashMap<>();
@@ -73,7 +76,9 @@ public class AssemblyParser {
 
         addExpressionSyntax(Expression.Type.LABEL_DEF,                      IDENTIFIER, COLON);
 
-        addExpressionSyntax(Expression.Type.LABEL_REF,                      IDENTIFIER);
+        addExpressionSyntax(Expression.Type.NAMED_CONSTANT_DEF,             IDENTIFIER, EQUALS, Expression.Type.CONSTANT);
+
+        //addExpressionSyntax(Expression.Type.LABEL_REF,                      IDENTIFIER);
 
         addExpressionSyntax(Expression.Type.DIRECTIVE,                      DIRECTIVE);
 
@@ -89,34 +94,37 @@ public class AssemblyParser {
 
         addExpressionSyntax(Expression.Type.TARGET, AddressingMode.ABX,     Expression.Type.DWORD, COMMA, X);
         addExpressionSyntax(Expression.Type.TARGET, AddressingMode.ABY,     Expression.Type.DWORD, COMMA, Y);
-        addExpressionSyntax(Expression.Type.TARGET, AddressingMode.ABS,     Expression.Type.DWORD);
         addExpressionSyntax(Expression.Type.TARGET, AddressingMode.ZPX,     Expression.Type.WORD, COMMA, X);
         addExpressionSyntax(Expression.Type.TARGET, AddressingMode.ZPY,     Expression.Type.WORD, COMMA, Y);
+        addExpressionSyntax(Expression.Type.TARGET, AddressingMode.ABS,     Expression.Type.DWORD);
         addExpressionSyntax(Expression.Type.TARGET, AddressingMode.ZRP,     Expression.Type.WORD);
+        //addExpressionSyntax(Expression.Type.TARGET, AddressingMode.ABS,     IDENTIFIER);
+        //addExpressionSyntax(Expression.Type.TARGET, AddressingMode.ZRP,     Expression.Type.CONSTANT);
         addExpressionSyntax(Expression.Type.TARGET, AddressingMode.IND,     LEFT_PAREN, Expression.Type.DWORD, RIGHT_PAREN);
         addExpressionSyntax(Expression.Type.TARGET, AddressingMode.IZX,     LEFT_PAREN, Expression.Type.WORD, COMMA, X, RIGHT_PAREN);
         addExpressionSyntax(Expression.Type.TARGET, AddressingMode.IZY,     LEFT_PAREN, Expression.Type.WORD, RIGHT_PAREN, COMMA, Y);
 
-        addExpressionSyntax(Expression.Type.NUMBER,                         Expression.Type.QWORD);
-        addExpressionSyntax(Expression.Type.NUMBER,                         Expression.Type.DWORD);
-        addExpressionSyntax(Expression.Type.NUMBER,                         Expression.Type.WORD);
+        addExpressionSyntax(Expression.Type.NUMBER, 4,                      Expression.Type.QWORD);
+        addExpressionSyntax(Expression.Type.NUMBER, 2,                      Expression.Type.DWORD);
+        addExpressionSyntax(Expression.Type.NUMBER, 1,                      Expression.Type.WORD);
 
         addExpressionSyntax(Expression.Type.IMM_VALUE,                      POUND, Expression.Type.WORD);
 
         addExpressionSyntax(Expression.Type.CONSTANT,                       Expression.Type.NUMBER);
-        addExpressionSyntax(Expression.Type.CONSTANT,                       Expression.Type.LABEL_REF);
+        addExpressionSyntax(Expression.Type.CONSTANT,                       IDENTIFIER);
 
         addStatementSyntax(Statement.Type.COMMENT,                          Expression.Type.COMMENT);
         addStatementSyntax(Statement.Type.LABEL_DEF,                        Expression.Type.LABEL_DEF);
+        addStatementSyntax(Statement.Type.NAMED_CONSTANT_DEF,               Expression.Type.NAMED_CONSTANT_DEF);
         addStatementSyntax(Statement.Type.DIRECTIVE,                        Expression.Type.DIRECTIVE, Expression.Type.CONSTANT);
         addStatementSyntax(Statement.Type.DIRECTIVE,                        Expression.Type.DIRECTIVE);
         addStatementSyntax(Statement.Type.INSTRUCTION,                      Expression.Type.MNEMONIC, Expression.Type.IMM_VALUE);
-        addStatementSyntax(Statement.Type.INSTRUCTION,                      Expression.Type.MNEMONIC, Expression.Type.LABEL_REF);
         addStatementSyntax(Statement.Type.INSTRUCTION,                      Expression.Type.MNEMONIC, Expression.Type.TARGET);
+        addStatementSyntax(Statement.Type.INSTRUCTION,                      Expression.Type.MNEMONIC, Expression.Type.CONSTANT);
         addStatementSyntax(Statement.Type.INSTRUCTION,                      Expression.Type.MNEMONIC);
     }
 
-    private static void addExpressionSyntax(Expression.Type expr, Object metadata, ExpressionPart... pattern) {
+    private static void addExpressionSyntax(Expression.Type expr, @Nullable Object metadata, ExpressionPart... pattern) {
         EXPRESSION_SYNTAXES.computeIfAbsent(
                 Expression.TypeWithMetadata.of(expr, metadata),
                 k -> new LinkedHashSet<>()).add(ImmutableList.copyOf(pattern)
@@ -171,6 +179,8 @@ public class AssemblyParser {
 
     // matches a token list against a specific statement type
     private static Optional<Pair<Statement, Integer>> matchStatement(List<Token> curTokens, Statement.Type goal) {
+        System.out.println("Trying statement " + goal);
+
         for (List<Expression.Type> pattern : STATEMENT_SYNTAXES.get(goal)) {
             // try to match against a specific pattern specified by this goal
             Optional<Pair<Statement, Integer>> res = matchStatementWithPattern(curTokens, goal, pattern);
@@ -205,8 +215,8 @@ public class AssemblyParser {
             }
 
             // add the values from the expression we found
-            if (res.get().first().getValue() != null) {
-                values.add(res.get().first().getValue());
+            if (res.get().first().getValues() != null) {
+                values.addAll(res.get().first().getValues());
             }
 
             // add the metadata value too since we need it later
@@ -255,14 +265,18 @@ public class AssemblyParser {
     // matches a token list against a specific expression AND pattern
     private static Optional<Pair<Expression<?>, Integer>> matchExpressionWithPattern(List<Token> curTokens,
             Expression.TypeWithMetadata<?> goal, List<ExpressionPart> pattern) {
+        System.out.println("  Trying expression " + goal.getType() + "(" + goal.getMetadata() + ") with pattern " + pattern);
+
         // track the token count so we can return it to the caller
         int tokenCount = 0;
 
-        Object value = null;
+        List<Object> values = new ArrayList<>();
 
         int line = -1;
 
         if (curTokens.size() < pattern.size()) {
+            System.out.println("Too small, failing");
+
             // not enough tokens to fulfill the pattern so just fail
             return Optional.empty();
         }
@@ -271,12 +285,16 @@ public class AssemblyParser {
             if (nextPart instanceof Token.Type) {
                 // if the next token isn't what we expect, then the pattern fails
                 if (curTokens.get(0).getType() != nextPart) {
+                    System.out.println("    Failed on token " + curTokens.get(0).getType());
                     return Optional.empty();
                 }
 
+                System.out.println("    Matched token " + nextPart);
+
+
                 // set the value, if applicable
                 if (curTokens.get(0).getValue().isPresent()) {
-                    value = curTokens.get(0).getValue().get();
+                    values.add(curTokens.get(0).getValue().get());
                 }
 
                 // set the expression's line number if we haven't already
@@ -297,9 +315,7 @@ public class AssemblyParser {
                 }
 
                 // set the value, if applicable
-                if (res.get().first().getValue() != null) {
-                    value = res.get().first().getValue();
-                }
+                values.addAll(res.get().first().getValues());
 
                 // try to inherit the child's metadata
                 if (goal.getMetadata() == null && res.get().first().getType().getMetadata() != null) {
@@ -318,9 +334,9 @@ public class AssemblyParser {
             }
         }
 
-        System.out.println("Line " + line + ": Matched expression " + goal.getType().name() + "(md:" + goal.getMetadata() + ")(v:" + value + ")");
+        System.out.println("    Line " + line + ": Matched expression " + goal.getType().name() + "(md:" + goal.getMetadata() + ")(v:" + values + ")");
 
-        return Optional.of(Pair.of(new Expression<>(goal, value, line), tokenCount));
+        return Optional.of(Pair.of(new Expression<>(goal, values, line), tokenCount));
     }
 
 }
