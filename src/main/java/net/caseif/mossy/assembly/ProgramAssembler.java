@@ -264,10 +264,10 @@ public class ProgramAssembler {
 
         int result = 0;
 
-        System.out.println(Arrays.toString(constDefStmt.getOperators()));
+        System.out.println(constDefStmt.getOperators());
 
-        for (int i = 0; i < constDefStmt.getValues().length; i++) {
-            Object val = constDefStmt.getValues()[i];
+        for (int i = 0; i < constDefStmt.getValues().size(); i++) {
+            Object val = constDefStmt.getValues().get(i);
 
             int resolved;
 
@@ -287,7 +287,7 @@ public class ProgramAssembler {
                  result = resolved;
                  System.out.println("E -> " + result);
             } else {
-                switch (constDefStmt.getOperators()[i - 1]) {
+                switch (constDefStmt.getOperators().get(i - 1)) {
                     case ADD:
                         result += resolved;
                         System.out.println("+ -> " + result);
@@ -297,7 +297,7 @@ public class ProgramAssembler {
                         System.out.println("- -> " + result);
                         break;
                     default:
-                        throw new AssertionError("Unhandled case " + constDefStmt.getOperators()[i - 1]);
+                        throw new AssertionError("Unhandled case " + constDefStmt.getOperators().get(i - 1));
                 }
             }
         }
@@ -312,12 +312,12 @@ public class ProgramAssembler {
         return result;
     }
 
-    private static int max(int[] arr) {
-        checkArgument(arr.length > 0, "Array must not be empty.");
+    private static int max(List<Integer> list) {
+        checkArgument(list.size() > 0, "List must not be empty.");
 
         int max = Integer.MIN_VALUE;
 
-        for (int v : arr) {
+        for (int v : list) {
             if (v > max) {
                 max = v;
             }

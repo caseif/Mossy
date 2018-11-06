@@ -8,6 +8,7 @@ public enum ValueType {
     STRING_LITERAL,
     ADDR_MODE,
     OPERAND_SIZE,
-    DIRECTIVE;
+    DIRECTIVE,
+    MATH_OPERATOR;
 
 }

@@ -25,19 +25,22 @@
 
 package net.caseif.mossy.assembly.model;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 public class Expression {
 
     private final TypeWithMetadata type;
-    private final Map<ValueType, Object> values;
+    private final List<TypedValue> values;
     private final int line;
 
-    public Expression(TypeWithMetadata type, Map<ValueType, Object> values, int line) {
+    public Expression(TypeWithMetadata type, List<TypedValue> values, int line) {
         this.type = type;
         this.values = values;
         this.line = line;
@@ -47,7 +50,7 @@ public class Expression {
         return type;
     }
 
-    public Map<ValueType, Object> getValues() {
+    public List<TypedValue> getValues() {
         return values;
     }
 
@@ -78,18 +81,18 @@ public class Expression {
         }
 
         private final Type type;
-        private final ImmutableMap<ValueType, Object> metadata;
+        private final ImmutableList<TypedValue> metadata;
 
         private TypeWithMetadata(Type type, TypedValue... metadata) {
             this.type = type;
-            this.metadata = Arrays.stream(metadata).collect(ImmutableMap.toImmutableMap(TypedValue::getType, TypedValue::getValue));
+            this.metadata = Arrays.stream(metadata).collect(ImmutableList.toImmutableList());
         }
 
         public Type getType() {
             return type;
         }
 
-        public ImmutableMap<ValueType, Object> getMetadata() {
+        public ImmutableList<TypedValue> getMetadata() {
             return metadata;
         }
 

@@ -34,7 +34,9 @@ import net.caseif.mossy.util.OperatorType;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -67,7 +69,7 @@ public abstract class Statement {
 
         Type(Class<? extends Statement> clazz) {
             try {
-                this.ctor = clazz.getDeclaredConstructor(Statement.class, Map.class, int.class);
+                this.ctor = clazz.getDeclaredConstructor(Statement.class, List.class, int.class);
             } catch (NoSuchMethodException ex) {
                 throw new AssertionError(String.format(
                         "Supplied class %s for type %s does not have an appropriate constructor.",
@@ -77,7 +79,7 @@ public abstract class Statement {
             }
         }
 
-        public Statement constructStatement(int line, Map<ValueType, Object> values) {
+        public Statement constructStatement(int line, List<TypedValue> values) {
             try {
                 return ctor.newInstance(null, values, line);
             } catch (InstantiationException | IllegalAccessException | InvocationTargetException ex) {
@@ -85,6 +87,16 @@ public abstract class Statement {
             }
         }
     }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T getValue(List<TypedValue> values, ValueType type) {
+        return (T) values.stream().filter(v -> v.getType() == type).map(TypedValue::getValue).findFirst().get();
+    }
+
+    private static boolean hasValue(List<TypedValue> values, ValueType type) {
+        return values.stream().anyMatch(v -> v.getType() == type);
+    }
+
 
     public class InstructionStatement extends Statement {
 
@@ -94,15 +106,15 @@ public abstract class Statement {
         private final int operandLength;
         private final String constantRef;
 
-        InstructionStatement(Map<ValueType, Object> values, int line) {
+        InstructionStatement(List<TypedValue> values, int line) {
             super(Type.INSTRUCTION, line);
 
             // value format is [mnemonic, (imm_value | const_ref | target)]
             // metadata format is [void, void, (imm_length | void | (addr_mode, operand_length))]
 
-            checkArgument(values.containsKey(ValueType.MNEMONIC));
+            checkArgument(hasValue(values, ValueType.MNEMONIC));
 
-            this.mnemonic = (Mnemonic) values.get(ValueType.MNEMONIC);
+            this.mnemonic = getValue(values, ValueType.MNEMONIC);
 
             if (values.size() == 1) {
                 // no opperand, just the bare mnemonic
@@ -116,30 +128,30 @@ public abstract class Statement {
                 // operand was supplied
 
                 // operand is a constant ref
-                if (values.containsKey(ValueType.STRING_LITERAL)) {
+                if (hasValue(values, ValueType.STRING_LITERAL)) {
                     // operand is a constant reference
 
-                    constantRef = (String) values.get(ValueType.STRING_LITERAL);
+                    constantRef = getValue(values, ValueType.STRING_LITERAL);
 
                     addrMode = mnemonic.getType() == Mnemonic.Type.BRANCH ? AddressingMode.REL : AddressingMode.ABS;
 
                     operand = 0;
                     operandLength = 0;
 
-                } else if (values.containsKey(ValueType.IMM_LITERAL)) {
-                    operand = (int) values.get(ValueType.IMM_LITERAL);
+                } else if (hasValue(values, ValueType.IMM_LITERAL)) {
+                    operand = getValue(values, ValueType.IMM_LITERAL);
 
-                    if (values.containsKey(ValueType.ADDR_MODE)) {
+                    if (hasValue(values, ValueType.ADDR_MODE)) {
                         // operand is a target
 
-                        addrMode = (AddressingMode) values.get(ValueType.ADDR_MODE);
+                        addrMode = getValue(values, ValueType.ADDR_MODE);
 
                         operandLength = 0;
                         constantRef = null;
                     } else {
                         // operand is an immediate value
 
-                        operandLength = (int) values.get(ValueType.OPERAND_SIZE);
+                        operandLength = getValue(values, ValueType.OPERAND_SIZE);
 
                         addrMode = AddressingMode.IMM;
                         constantRef = null;
@@ -180,12 +192,12 @@ public abstract class Statement {
 
         private final String name;
 
-        LabelDefinitionStatement(Map<ValueType, Object> values, int line) {
+        LabelDefinitionStatement(List<TypedValue> values, int line) {
             super(Type.LABEL_DEF, line);
 
-            checkArgument(values.containsKey(ValueType.STRING_LITERAL));
+            checkArgument(hasValue(values, ValueType.STRING_LITERAL));
 
-            this.name = (String) values.get(ValueType.STRING_LITERAL);
+            this.name = getValue(values, ValueType.STRING_LITERAL);
         }
 
         public String getName() {
@@ -197,47 +209,51 @@ public abstract class Statement {
     public class ConstantDefinitionStatement extends Statement {
 
         private final String name;
-        private final Object[] values;
-        private final int[] sizes;
-        private final OperatorType[] operators;
+        private final List<Object> values;
+        private final List<Integer> sizes;
+        private final List<OperatorType> operators;
 
-        ConstantDefinitionStatement(Map<ValueType, Object> values, int line) {
+        ConstantDefinitionStatement(List<TypedValue> values, int line) {
             super(Type.NAMED_CONSTANT_DEF, line);
 
-            this.name = (String) values.get(ValueType.STRING_LITERAL);
+            this.name = getValue(values, ValueType.STRING_LITERAL);
 
-            int valueCount = (values.size() - 1) / 2;
+            this.values = new ArrayList<>();
+            this.sizes = new ArrayList<>();
+            this.operators = new ArrayList<>();
 
-            this.values = new Object[valueCount];
-            this.sizes = new int[valueCount];
-            this.operators = new OperatorType[valueCount - 1];
-
-            //TODO: big ol' TODO
-            /*for (int i = 0; i < valueCount; i++) {
-                int offset = 1;
-
-                this.values[i] = values[i * 3 + offset++];
-                if (i != valueCount - 1) {
-                    this.operators[i] = (OperatorType) values[i * 3 + offset++];
+            for (int i = 1; i < values.size(); i++) {
+                TypedValue v = values.get(i);
+                switch (v.getType()) {
+                    case MATH_OPERATOR:
+                        this.operators.add((OperatorType) v.getValue());
+                        break;
+                    case OPERAND_SIZE:
+                        this.sizes.add((int) v.getValue());
+                        break;
+                    case IMM_LITERAL:
+                    case STRING_LITERAL:
+                        this.values.add(v.getValue());
+                        break;
+                    default:
+                        throw new AssertionError("Unhandled case " + v.getType().name());
                 }
-                // metadata comes last
-                this.sizes[i] = (int) values[i * 3 + offset];
-            }*/
+            }
         }
 
         public String getName() {
             return name;
         }
 
-        public Object[] getValues() {
+        public List<Object> getValues() {
             return values;
         }
 
-        public int[] getSizes() {
+        public List<Integer> getSizes() {
             return sizes;
         }
 
-        public OperatorType[] getOperators() {
+        public List<OperatorType> getOperators() {
             return operators;
         }
 
@@ -248,18 +264,18 @@ public abstract class Statement {
         private final Directive type;
         private final Object param;
 
-        DirectiveStatement(Map<ValueType, Object> values, int line) {
+        DirectiveStatement(List<TypedValue> values, int line) {
             super(Type.DIRECTIVE, line);
 
-            checkArgument(values.containsKey(ValueType.DIRECTIVE));
+            checkArgument(hasValue(values, ValueType.DIRECTIVE));
 
-            this.type = (Directive) values.get(ValueType.DIRECTIVE);
+            this.type = getValue(values, ValueType.DIRECTIVE);
 
             if (values.size() > 1) {
-                if (values.containsKey(ValueType.IMM_LITERAL)) {
-                    param = values.get(ValueType.IMM_LITERAL);
-                } else if (values.containsKey(ValueType.STRING_LITERAL)) {
-                    param = values.get(ValueType.STRING_LITERAL);
+                if (hasValue(values, ValueType.IMM_LITERAL)) {
+                    param = getValue(values, ValueType.IMM_LITERAL);
+                } else if (hasValue(values, ValueType.STRING_LITERAL)) {
+                    param = getValue(values, ValueType.STRING_LITERAL);
                 } else {
                     throw new AssertionError("Cannot find valid parameter for directive statement");
                 }
@@ -280,7 +296,7 @@ public abstract class Statement {
 
     public class CommentStatement extends Statement {
 
-        CommentStatement(Map<ValueType, Object> values, int line) {
+        CommentStatement(List<TypedValue> values, int line) {
             super(Type.COMMENT, line);
         }
 

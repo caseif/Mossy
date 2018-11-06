@@ -21,4 +21,9 @@ public class TypedValue {
     public Object getValue() {
         return value;
     }
+
+    @Override
+    public String toString() {
+        return "TypedValue[type=" + type + ", value=" + value + "]";
+    }
 }

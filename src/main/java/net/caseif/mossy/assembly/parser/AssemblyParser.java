@@ -51,6 +51,7 @@ import static net.caseif.mossy.assembly.model.ValueType.ADDR_MODE;
 import static net.caseif.mossy.assembly.model.ValueType.OPERAND_SIZE;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Lists;
 import net.caseif.moslib.AddressingMode;
 import net.caseif.mossy.assembly.model.Expression;
 import net.caseif.mossy.assembly.model.ExpressionPart;
@@ -211,7 +212,7 @@ public class AssemblyParser {
 
     // matches a token list against a specific statement type AND pattern
     private static Optional<Pair<Statement, Integer>> matchStatementWithPattern(List<Token> curTokens,
-            Statement.Type goal, List<Expression.Type> pattern) {
+                                                                                Statement.Type goal, List<Expression.Type> pattern) {
         System.out.println("Trying statement " + goal + " with pattern " + pattern);
 
         // track the token count so we can return it to the caller
@@ -220,7 +221,7 @@ public class AssemblyParser {
         int line = -1;
 
         // values obtained from the expressions constituating the statement
-        Map<ValueType, Object> values = new HashMap<>();
+        List<TypedValue> values = new ArrayList<>();
 
         for (Expression.Type nextExpr : pattern) {
             Optional<Pair<Expression, Integer>> res = matchExpression(curTokens, nextExpr);
@@ -232,12 +233,12 @@ public class AssemblyParser {
 
             // add the values from the expression we found
             if (res.get().first().getValues() != null) {
-                values.putAll(res.get().first().getValues());
+                values.addAll(res.get().first().getValues());
             }
 
             // add the metadata value too since we need it later
             if (res.get().first().getType().getMetadata() != null) {
-                values.putAll(res.get().first().getType().getMetadata());
+                values.addAll(res.get().first().getType().getMetadata());
             }
 
             // set the statement's line number if we haven't already
@@ -257,6 +258,7 @@ public class AssemblyParser {
     }
 
     // matches a token list against a specific expression
+
     private static Optional<Pair<Expression, Integer>> matchExpression(List<Token> curTokens, Expression.Type goal) {
         // we have to do it this way since the map stores types _with metadata_ as keys
         for (Map.Entry<Expression.TypeWithMetadata, Set<ImmutableList<ExpressionPart>>> e : EXPRESSION_SYNTAXES.entrySet()) {
@@ -280,8 +282,8 @@ public class AssemblyParser {
         // we didn't find any valid expressions
         return Optional.empty();
     }
-
     // matches a token list against a specific expression AND pattern
+
     private static Optional<Pair<Expression, Integer>> matchExpressionWithPattern(List<Token> curTokens,
             Expression.TypeWithMetadata goal, List<ExpressionPart> pattern) {
         System.out.println("  Trying expression " + goal.getType() + "(" + goal.getMetadata() + ") with pattern " + pattern);
@@ -289,7 +291,7 @@ public class AssemblyParser {
         // track the token count so we can return it to the caller
         int tokenCount = 0;
 
-        Map<ValueType, Object> values = new HashMap<>(goal.getMetadata());
+        List<TypedValue> values = new ArrayList<>(goal.getMetadata());
 
         int line = -1;
 
@@ -312,7 +314,7 @@ public class AssemblyParser {
 
                 // set the value, if applicable
                 if (curTokens.get(0).getType().getValueType() != ValueType.EMPTY) {
-                    values.put(curTokens.get(0).getType().getValueType(), curTokens.get(0).getValue().get());
+                    values.add(TypedValue.of(curTokens.get(0).getType().getValueType(), curTokens.get(0).getValue().get()));
                 }
 
                 // set the expression's line number if we haven't already
@@ -333,10 +335,10 @@ public class AssemblyParser {
                 }
 
                 // set the value, if applicable
-                values.putAll(res.get().first().getValues());
+                values.addAll(res.get().first().getValues());
 
                 // append the child's metadata
-                values.putAll(res.get().first().getType().getMetadata());
+                values.addAll(res.get().first().getType().getMetadata());
 
                 // set the expression's line number if we haven't already
                 if (line == -1) {
@@ -354,5 +356,4 @@ public class AssemblyParser {
 
         return Optional.of(Pair.of(new Expression(Expression.TypeWithMetadata.of(goal.getType()), values, line), tokenCount));
     }
-
 }

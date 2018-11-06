@@ -27,6 +27,7 @@ package net.caseif.mossy.assembly.model;
 
 import static net.caseif.mossy.assembly.model.ValueType.EMPTY;
 import static net.caseif.mossy.assembly.model.ValueType.IMM_LITERAL;
+import static net.caseif.mossy.assembly.model.ValueType.MATH_OPERATOR;
 import static net.caseif.mossy.assembly.model.ValueType.STRING_LITERAL;
 
 import net.caseif.moslib.Mnemonic;
@@ -84,8 +85,8 @@ public class Token {
         COMMA(EMPTY, ","),
         EQUALS(EMPTY, "="),
         POUND(EMPTY, "#"),
-        PLUS(EMPTY, "(\\+)", OperatorType::getOperatorFromChar),
-        MINUS(EMPTY, "(-)", OperatorType::getOperatorFromChar),
+        PLUS(MATH_OPERATOR, "(\\+)", OperatorType::getOperatorFromChar),
+        MINUS(MATH_OPERATOR, "(-)", OperatorType::getOperatorFromChar),
         LEFT_PAREN(EMPTY, "\\("),
         RIGHT_PAREN(EMPTY, "\\)");
 
