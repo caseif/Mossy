@@ -25,6 +25,8 @@
 
 package net.caseif.mossy.assembly;
 
+import static com.google.common.base.Preconditions.checkArgument;
+
 import net.caseif.moslib.AddressingMode;
 import net.caseif.moslib.Instruction;
 import net.caseif.moslib.Mnemonic;
@@ -44,6 +46,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -194,7 +197,8 @@ public class ProgramAssembler {
                         throw new AssemblerException(String.format("Constant %s defined multiple times.", name), stmt.getLine());
                     }
 
-                    NamedConstant nc = new NamedConstant(name, constDefStmt.getValue(), constDefStmt.getSize());
+                    int resolvedValue = resolveValue(constDefStmt, constants);
+                    NamedConstant nc = new NamedConstant(name, resolvedValue, max(constDefStmt.getSizes()));
 
                     constants.put(name, nc);
 
@@ -253,6 +257,73 @@ public class ProgramAssembler {
         }
 
         return labelDict;
+    }
+
+    private static int resolveValue(Statement.ConstantDefinitionStatement constDefStmt, Map<String, NamedConstant> constants) throws AssemblerException {
+        int maxVal = (int) Math.pow(2, max(constDefStmt.getSizes()) * 8) - 1;
+
+        int result = 0;
+
+        System.out.println(Arrays.toString(constDefStmt.getOperators()));
+
+        for (int i = 0; i < constDefStmt.getValues().length; i++) {
+            Object val = constDefStmt.getValues()[i];
+
+            int resolved;
+
+            if (val instanceof Integer) {
+                resolved = (int) val;
+            } else if (val instanceof String) {
+                if (!constants.containsKey(val)) {
+                    throw new AssemblerException("Reference to undefined constant " + val + ".", constDefStmt.getLine());
+                }
+
+                resolved = constants.get(val).getValue();
+            } else {
+                throw new AssertionError("Unhandled case " + val.getClass().getName() + ".");
+            }
+
+            if (i == 0) {
+                 result = resolved;
+                 System.out.println("E -> " + result);
+            } else {
+                switch (constDefStmt.getOperators()[i - 1]) {
+                    case ADD:
+                        result += resolved;
+                        System.out.println("+ -> " + result);
+                        break;
+                    case SUBTRACT:
+                        result -= resolved;
+                        System.out.println("- -> " + result);
+                        break;
+                    default:
+                        throw new AssertionError("Unhandled case " + constDefStmt.getOperators()[i - 1]);
+                }
+            }
+        }
+
+        if (result > maxVal) {
+            throw new AssemblerException("Resolved value " + result + " for constant " + constDefStmt.getName()
+                    + " is too large (max value of " + maxVal + ").", constDefStmt.getLine());
+        }
+
+        System.out.println("result = " + result);
+
+        return result;
+    }
+
+    private static int max(int[] arr) {
+        checkArgument(arr.length > 0, "Array must not be empty.");
+
+        int max = Integer.MIN_VALUE;
+
+        for (int v : arr) {
+            if (v > max) {
+                max = v;
+            }
+        }
+
+         return max;
     }
 
 }

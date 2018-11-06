@@ -25,28 +25,29 @@
 
 package net.caseif.mossy.assembly.model;
 
-import java.util.List;
+import com.google.common.collect.ImmutableMap;
+
+import java.util.Arrays;
+import java.util.Map;
 import java.util.Objects;
 
-import javax.annotation.Nullable;
+public class Expression {
 
-public class Expression<T> {
-
-    private final TypeWithMetadata<T> type;
-    private final List<Object> values;
+    private final TypeWithMetadata type;
+    private final Map<ValueType, Object> values;
     private final int line;
 
-    public Expression(TypeWithMetadata<T> type, List<Object> values, int line) {
+    public Expression(TypeWithMetadata type, Map<ValueType, Object> values, int line) {
         this.type = type;
         this.values = values;
         this.line = line;
     }
 
-    public TypeWithMetadata<T> getType() {
+    public TypeWithMetadata getType() {
         return type;
     }
 
-    public List<Object> getValues() {
+    public Map<ValueType, Object> getValues() {
         return values;
     }
 
@@ -60,39 +61,35 @@ public class Expression<T> {
         IMM_VALUE,
         LABEL_DEF,
         NAMED_CONSTANT_DEF,
-        LABEL_REF,
         DIRECTIVE,
         QWORD,
         DWORD,
         WORD,
         NUMBER,
+        ARITHMETIC_OPERATOR,
         CONSTANT,
-        COMMENT
+        COMMENT;
     }
 
-    public static class TypeWithMetadata<T> {
+    public static class TypeWithMetadata {
 
-        public static <T> TypeWithMetadata<T> of(Type type, T metadata) {
-            return new TypeWithMetadata<>(type, metadata);
-        }
-
-        public static TypeWithMetadata<Void> of(Type type) {
-            return of(type, null);
+        public static TypeWithMetadata of(Type type, TypedValue... metadata) {
+            return new TypeWithMetadata(type, metadata);
         }
 
         private final Type type;
-        private final T metadata;
+        private final ImmutableMap<ValueType, Object> metadata;
 
-        private TypeWithMetadata(Type type, @Nullable T metadata) {
+        private TypeWithMetadata(Type type, TypedValue... metadata) {
             this.type = type;
-            this.metadata = metadata;
+            this.metadata = Arrays.stream(metadata).collect(ImmutableMap.toImmutableMap(TypedValue::getType, TypedValue::getValue));
         }
 
         public Type getType() {
             return type;
         }
 
-        public T getMetadata() {
+        public ImmutableMap<ValueType, Object> getMetadata() {
             return metadata;
         }
 
@@ -100,7 +97,7 @@ public class Expression<T> {
         public boolean equals(Object other) {
             return other instanceof TypeWithMetadata
                     && type == ((TypeWithMetadata) other).type
-                    && Objects.equals(metadata, ((TypeWithMetadata) other).metadata);
+                    && metadata.equals(((TypeWithMetadata) other).metadata);
         }
 
         @Override

@@ -25,14 +25,17 @@
 
 package net.caseif.mossy.assembly.model;
 
+import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
 import net.caseif.moslib.AddressingMode;
 import net.caseif.moslib.Mnemonic;
+import net.caseif.mossy.util.OperatorType;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Optional;
 
 public abstract class Statement {
@@ -64,7 +67,7 @@ public abstract class Statement {
 
         Type(Class<? extends Statement> clazz) {
             try {
-                this.ctor = clazz.getDeclaredConstructor(Statement.class, Object[].class, int.class);
+                this.ctor = clazz.getDeclaredConstructor(Statement.class, Map.class, int.class);
             } catch (NoSuchMethodException ex) {
                 throw new AssertionError(String.format(
                         "Supplied class %s for type %s does not have an appropriate constructor.",
@@ -74,9 +77,9 @@ public abstract class Statement {
             }
         }
 
-        public Statement constructStatement(int line, Object... values) {
+        public Statement constructStatement(int line, Map<ValueType, Object> values) {
             try {
-                return ctor.newInstance(null, (Object[]) values, line);
+                return ctor.newInstance(null, values, line);
             } catch (InstantiationException | IllegalAccessException | InvocationTargetException ex) {
                 throw new RuntimeException(ex);
             }
@@ -91,40 +94,59 @@ public abstract class Statement {
         private final int operandLength;
         private final String constantRef;
 
-        InstructionStatement(Object[] values, int line) {
+        InstructionStatement(Map<ValueType, Object> values, int line) {
             super(Type.INSTRUCTION, line);
 
-            this.mnemonic = (Mnemonic) values[0];
+            // value format is [mnemonic, (imm_value | const_ref | target)]
+            // metadata format is [void, void, (imm_length | void | (addr_mode, operand_length))]
 
-            System.out.println(Arrays.toString(values));
+            checkArgument(values.containsKey(ValueType.MNEMONIC));
 
-            if (values.length == 3) {
-                operand = (int) values[1];
+            this.mnemonic = (Mnemonic) values.get(ValueType.MNEMONIC);
 
-                if (values[2] instanceof AddressingMode) {
-                    addrMode = (AddressingMode) values[2];
+            if (values.size() == 1) {
+                // no opperand, just the bare mnemonic
 
-                    operandLength = 0;
-                    constantRef = null;
-                } else {
-                    operandLength = (int) values[2];
-
-                    addrMode = AddressingMode.IMM;
-                    constantRef = null;
-                }
-            } else if (values.length == 2) {
-                constantRef = (String) values[1];
-
-                addrMode = mnemonic.getType() == Mnemonic.Type.BRANCH ? AddressingMode.REL : AddressingMode.ABS;
-
-                operand = 0;
-                operandLength = 0;
-            } else {
                 addrMode = AddressingMode.IMP;
 
                 operand = 0;
                 operandLength = 0;
                 constantRef = null;
+            } else {
+                // operand was supplied
+
+                // operand is a constant ref
+                if (values.containsKey(ValueType.STRING_LITERAL)) {
+                    // operand is a constant reference
+
+                    constantRef = (String) values.get(ValueType.STRING_LITERAL);
+
+                    addrMode = mnemonic.getType() == Mnemonic.Type.BRANCH ? AddressingMode.REL : AddressingMode.ABS;
+
+                    operand = 0;
+                    operandLength = 0;
+
+                } else if (values.containsKey(ValueType.IMM_LITERAL)) {
+                    operand = (int) values.get(ValueType.IMM_LITERAL);
+
+                    if (values.containsKey(ValueType.ADDR_MODE)) {
+                        // operand is a target
+
+                        addrMode = (AddressingMode) values.get(ValueType.ADDR_MODE);
+
+                        operandLength = 0;
+                        constantRef = null;
+                    } else {
+                        // operand is an immediate value
+
+                        operandLength = (int) values.get(ValueType.OPERAND_SIZE);
+
+                        addrMode = AddressingMode.IMM;
+                        constantRef = null;
+                    }
+                } else {
+                    throw new AssertionError(String.format("Unhandled case (%d values)", values.size()));
+                }
             }
         }
 
@@ -158,10 +180,12 @@ public abstract class Statement {
 
         private final String name;
 
-        LabelDefinitionStatement(Object[] values, int line) {
+        LabelDefinitionStatement(Map<ValueType, Object> values, int line) {
             super(Type.LABEL_DEF, line);
 
-            this.name = (String) values[0];
+            checkArgument(values.containsKey(ValueType.STRING_LITERAL));
+
+            this.name = (String) values.get(ValueType.STRING_LITERAL);
         }
 
         public String getName() {
@@ -173,27 +197,48 @@ public abstract class Statement {
     public class ConstantDefinitionStatement extends Statement {
 
         private final String name;
-        private final int value;
-        private final int size;
+        private final Object[] values;
+        private final int[] sizes;
+        private final OperatorType[] operators;
 
-        ConstantDefinitionStatement(Object[] values, int line) {
+        ConstantDefinitionStatement(Map<ValueType, Object> values, int line) {
             super(Type.NAMED_CONSTANT_DEF, line);
 
-            this.name = (String) values[0];
-            this.value = (int) values[1];
-            this.size = (int) values[2];
+            this.name = (String) values.get(ValueType.STRING_LITERAL);
+
+            int valueCount = (values.size() - 1) / 2;
+
+            this.values = new Object[valueCount];
+            this.sizes = new int[valueCount];
+            this.operators = new OperatorType[valueCount - 1];
+
+            //TODO: big ol' TODO
+            /*for (int i = 0; i < valueCount; i++) {
+                int offset = 1;
+
+                this.values[i] = values[i * 3 + offset++];
+                if (i != valueCount - 1) {
+                    this.operators[i] = (OperatorType) values[i * 3 + offset++];
+                }
+                // metadata comes last
+                this.sizes[i] = (int) values[i * 3 + offset];
+            }*/
         }
 
         public String getName() {
             return name;
         }
 
-        public int getValue() {
-            return value;
+        public Object[] getValues() {
+            return values;
         }
 
-        public int getSize() {
-            return size;
+        public int[] getSizes() {
+            return sizes;
+        }
+
+        public OperatorType[] getOperators() {
+            return operators;
         }
 
     }
@@ -203,13 +248,21 @@ public abstract class Statement {
         private final Directive type;
         private final Object param;
 
-        DirectiveStatement(Object[] values, int line) {
+        DirectiveStatement(Map<ValueType, Object> values, int line) {
             super(Type.DIRECTIVE, line);
 
-            this.type = (Directive) values[0];
+            checkArgument(values.containsKey(ValueType.DIRECTIVE));
 
-            if (values.length > 1) {
-                this.param = values[1];
+            this.type = (Directive) values.get(ValueType.DIRECTIVE);
+
+            if (values.size() > 1) {
+                if (values.containsKey(ValueType.IMM_LITERAL)) {
+                    param = values.get(ValueType.IMM_LITERAL);
+                } else if (values.containsKey(ValueType.STRING_LITERAL)) {
+                    param = values.get(ValueType.STRING_LITERAL);
+                } else {
+                    throw new AssertionError("Cannot find valid parameter for directive statement");
+                }
             } else {
                 this.param = null;
             }
@@ -227,7 +280,7 @@ public abstract class Statement {
 
     public class CommentStatement extends Statement {
 
-        CommentStatement(Object[] values, int line) {
+        CommentStatement(Map<ValueType, Object> values, int line) {
             super(Type.COMMENT, line);
         }
 

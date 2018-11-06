@@ -25,7 +25,12 @@
 
 package net.caseif.mossy.assembly.model;
 
+import static net.caseif.mossy.assembly.model.ValueType.EMPTY;
+import static net.caseif.mossy.assembly.model.ValueType.IMM_LITERAL;
+import static net.caseif.mossy.assembly.model.ValueType.STRING_LITERAL;
+
 import net.caseif.moslib.Mnemonic;
+import net.caseif.mossy.util.OperatorType;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -62,36 +67,44 @@ public class Token {
     }
 
     public enum Type implements ExpressionPart {
-        COMMENT(";.*$"),
-        MNEMONIC("([A-Z]{3})(?=\\s|$)", Mnemonic::valueOf),
-        X("X(?![A-z0-9])"),
-        Y("Y(?![A-z0-9])"),
-        IDENTIFIER("([A-z][A-z0-9_]*)"),
-        DIRECTIVE("\\.([A-z]+)", Directive::valueOfInsensitive),
-        HEX_QWORD("\\$([0-9A-F]{8})", PARSE_HEX),
-        HEX_DWORD("\\$([0-9A-F]{4})", PARSE_HEX),
-        HEX_WORD("\\$([0-9A-F]{2})", PARSE_HEX),
-        DEC_WORD("([0-9]{1,3})", PARSE_DEC),
-        BIN_QWORD("%([01]{32})", PARSE_BIN),
-        BIN_DWORD("%([01]{16})", PARSE_BIN),
-        BIN_WORD("%([01]{8})", PARSE_BIN),
-        COLON(":"),
-        COMMA(","),
-        EQUALS("="),
-        POUND("#"),
-        LEFT_PAREN("\\("),
-        RIGHT_PAREN("\\)");
+        COMMENT(EMPTY, ";.*$"),
+        MNEMONIC(ValueType.MNEMONIC, "([A-Z]{3})(?=\\s|$)", Mnemonic::valueOf),
+        X(EMPTY, "X(?![A-z0-9])"),
+        Y(EMPTY, "Y(?![A-z0-9])"),
+        IDENTIFIER(STRING_LITERAL, "([A-z][A-z0-9_]*)"),
+        DIRECTIVE(ValueType.DIRECTIVE, "\\.([A-z]+)", Directive::valueOfInsensitive),
+        HEX_QWORD(IMM_LITERAL, "\\$([0-9A-F]{8})", PARSE_HEX),
+        HEX_DWORD(IMM_LITERAL, "\\$([0-9A-F]{4})", PARSE_HEX),
+        HEX_WORD(IMM_LITERAL, "\\$([0-9A-F]{2})", PARSE_HEX),
+        DEC_WORD(IMM_LITERAL, "([0-9]{1,3})", PARSE_DEC),
+        BIN_QWORD(IMM_LITERAL, "%([01]{32})", PARSE_BIN),
+        BIN_DWORD(IMM_LITERAL, "%([01]{16})", PARSE_BIN),
+        BIN_WORD(IMM_LITERAL, "%([01]{8})", PARSE_BIN),
+        COLON(EMPTY, ":"),
+        COMMA(EMPTY, ","),
+        EQUALS(EMPTY, "="),
+        POUND(EMPTY, "#"),
+        PLUS(EMPTY, "(\\+)", OperatorType::getOperatorFromChar),
+        MINUS(EMPTY, "(-)", OperatorType::getOperatorFromChar),
+        LEFT_PAREN(EMPTY, "\\("),
+        RIGHT_PAREN(EMPTY, "\\)");
 
+        private final ValueType valueType;
         private final Pattern regex;
         private final Function<String, ?> valueAdapter;
 
-        Type(String regex, Function<String, ?> valueAdapter) {
+        Type(ValueType valueType, String regex, Function<String, ?> valueAdapter) {
+            this.valueType = valueType;
             this.regex = Pattern.compile("^" + regex);
             this.valueAdapter = valueAdapter;
         }
 
-        Type(String regex) {
-            this(regex, Function.identity());
+        Type(ValueType valueType, String regex) {
+            this(valueType, regex, Function.identity());
+        }
+
+        public ValueType getValueType() {
+            return valueType;
         }
 
         public Pattern getRegex() {
