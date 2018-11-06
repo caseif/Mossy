@@ -197,8 +197,16 @@ public class ProgramAssembler {
                         throw new AssemblerException(String.format("Constant %s defined multiple times.", name), stmt.getLine());
                     }
 
+                    List<Integer> sizes = new ArrayList<>(constDefStmt.getSizes());
+
+                    for (Object v : constDefStmt.getValues()) {
+                        if (v instanceof String) {
+                            sizes.add(constants.get(v).getSize());
+                        }
+                    }
+
                     int resolvedValue = resolveValue(constDefStmt, constants);
-                    NamedConstant nc = new NamedConstant(name, resolvedValue, max(constDefStmt.getSizes()));
+                    NamedConstant nc = new NamedConstant(name, resolvedValue, max(sizes));
 
                     constants.put(name, nc);
 
