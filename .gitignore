@@ -260,5 +260,5 @@ gradle-app.setting
 # Allow unit test resources
 !test.jar
 
-# jNES-specific files
-*.dump
+# mossy-specific files
+test.asm

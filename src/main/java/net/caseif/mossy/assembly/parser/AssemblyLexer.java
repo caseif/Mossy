@@ -29,8 +29,11 @@ import net.caseif.mossy.assembly.model.Token;
 import net.caseif.mossy.util.exception.LexerException;
 import net.caseif.mossy.util.tuple.Pair;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -75,24 +78,13 @@ public class AssemblyLexer {
     public static List<List<Token>> lex(InputStream input) throws IOException, LexerException {
         List<List<Token>> tokens = new ArrayList<>();
 
-        StringBuilder lineBuilder = new StringBuilder();
-
         int curLine = 1;
 
         int b;
-        while ((b = input.read()) != -1) {
-            if (b == '\n') {
-                List<Token> line = new ArrayList<>(tokenize(lineBuilder.toString(), curLine));
-
-                if (!line.isEmpty()) {
-                    tokens.add(line);
-                }
-
-                lineBuilder.setLength(0);
-
-                curLine++;
-            } else {
-                lineBuilder.append((char) b);
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(input))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                tokens.add(new ArrayList<>(tokenize(line, curLine++)));
             }
         }
 
