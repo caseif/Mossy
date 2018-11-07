@@ -60,6 +60,8 @@ public class AssemblyLexer {
                 continue;
             }
 
+            System.out.println("Matched token " + token.name());
+
             int len = m.group(0).length();
 
             String valueStr = m.groupCount() > 0 ? m.group(1) : null;

@@ -28,6 +28,8 @@ package net.caseif.mossy.assembly.model;
 import static net.caseif.mossy.assembly.model.ValueType.EMPTY;
 import static net.caseif.mossy.assembly.model.ValueType.IMM_LITERAL;
 import static net.caseif.mossy.assembly.model.ValueType.MATH_OPERATOR;
+import static net.caseif.mossy.assembly.model.ValueType.MODIFIER_MASK_HI;
+import static net.caseif.mossy.assembly.model.ValueType.MODIFIER_MASK_LO;
 import static net.caseif.mossy.assembly.model.ValueType.STRING_LITERAL;
 
 import net.caseif.moslib.Mnemonic;
@@ -74,9 +76,9 @@ public class Token {
         Y(EMPTY, "Y(?![A-z0-9])"),
         IDENTIFIER(STRING_LITERAL, "([A-z][A-z0-9_]*)"),
         DIRECTIVE(ValueType.DIRECTIVE, "\\.([A-z]+)", Directive::valueOfInsensitive),
-        HEX_QWORD(IMM_LITERAL, "\\$([0-9A-F]{8})", PARSE_HEX),
-        HEX_DWORD(IMM_LITERAL, "\\$([0-9A-F]{4})", PARSE_HEX),
-        HEX_WORD(IMM_LITERAL, "\\$([0-9A-F]{2})", PARSE_HEX),
+        HEX_QWORD(IMM_LITERAL, "\\$([0-9A-Fa-f]{8})", PARSE_HEX),
+        HEX_DWORD(IMM_LITERAL, "\\$([0-9A-Fa-f]{4})", PARSE_HEX),
+        HEX_WORD(IMM_LITERAL, "\\$([0-9A-Fa-f]{2})", PARSE_HEX),
         DEC_WORD(IMM_LITERAL, "([0-9]{1,3})", PARSE_DEC),
         BIN_QWORD(IMM_LITERAL, "%([01]{32})", PARSE_BIN),
         BIN_DWORD(IMM_LITERAL, "%([01]{16})", PARSE_BIN),
@@ -84,6 +86,8 @@ public class Token {
         COLON(EMPTY, ":"),
         COMMA(EMPTY, ","),
         EQUALS(EMPTY, "="),
+        GREATER_THAN(EMPTY, ">", s -> 1),
+        LESS_THAN(EMPTY, "<", s -> 1),
         POUND(EMPTY, "#"),
         PLUS(MATH_OPERATOR, "(\\+)", OperatorType::getOperatorFromChar),
         MINUS(MATH_OPERATOR, "(-)", OperatorType::getOperatorFromChar),

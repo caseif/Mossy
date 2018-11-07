@@ -25,6 +25,8 @@
 
 package net.caseif.mossy.assembly.parser;
 
+import static net.caseif.mossy.assembly.model.Token.Type.GREATER_THAN;
+import static net.caseif.mossy.assembly.model.Token.Type.LESS_THAN;
 import static net.caseif.mossy.assembly.model.TypedValue.of;
 import static net.caseif.mossy.assembly.model.Token.Type.BIN_DWORD;
 import static net.caseif.mossy.assembly.model.Token.Type.BIN_QWORD;
@@ -48,10 +50,12 @@ import static net.caseif.mossy.assembly.model.Token.Type.RIGHT_PAREN;
 import static net.caseif.mossy.assembly.model.Token.Type.X;
 import static net.caseif.mossy.assembly.model.Token.Type.Y;
 import static net.caseif.mossy.assembly.model.ValueType.ADDR_MODE;
+import static net.caseif.mossy.assembly.model.ValueType.MODIFIER_IMM;
+import static net.caseif.mossy.assembly.model.ValueType.MODIFIER_MASK_HI;
+import static net.caseif.mossy.assembly.model.ValueType.MODIFIER_MASK_LO;
 import static net.caseif.mossy.assembly.model.ValueType.OPERAND_SIZE;
 
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Lists;
 import net.caseif.moslib.AddressingMode;
 import net.caseif.mossy.assembly.model.Expression;
 import net.caseif.mossy.assembly.model.ExpressionPart;
@@ -63,8 +67,6 @@ import net.caseif.mossy.util.exception.ParserException;
 import net.caseif.mossy.util.tuple.Pair;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -100,6 +102,11 @@ public class AssemblyParser {
         addExpressionSyntax(Expression.Type.WORD,  of(OPERAND_SIZE, 1),     DEC_WORD);
         addExpressionSyntax(Expression.Type.WORD,  of(OPERAND_SIZE, 1),     BIN_WORD);
 
+        addExpressionSyntax(Expression.Type.WORD,  of(OPERAND_SIZE, 1),     Expression.Type.MASK, Expression.Type.DWORD);
+
+        addExpressionSyntax(Expression.Type.MASK, of(MODIFIER_MASK_HI, 1),  GREATER_THAN);
+        addExpressionSyntax(Expression.Type.MASK, of(MODIFIER_MASK_LO, 1),  LESS_THAN);
+
         addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.ABX),  Expression.Type.DWORD, COMMA, X);
         addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.ABY),  Expression.Type.DWORD, COMMA, Y);
         addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.ZPX),  Expression.Type.WORD, COMMA, X);
@@ -114,8 +121,6 @@ public class AssemblyParser {
         addExpressionSyntax(Expression.Type.NUMBER, of(OPERAND_SIZE, 2),    Expression.Type.DWORD);
         addExpressionSyntax(Expression.Type.NUMBER, of(OPERAND_SIZE, 1),    Expression.Type.WORD);
 
-        addExpressionSyntax(Expression.Type.IMM_VALUE,                      POUND, Expression.Type.WORD);
-
         addExpressionSyntax(Expression.Type.ARITHMETIC_OPERATOR,            PLUS);
         addExpressionSyntax(Expression.Type.ARITHMETIC_OPERATOR,            MINUS);
 
@@ -123,6 +128,10 @@ public class AssemblyParser {
         addExpressionSyntax(Expression.Type.CONSTANT,                       Expression.Type.NUMBER, Expression.Type.ARITHMETIC_OPERATOR, Expression.Type.CONSTANT);
         addExpressionSyntax(Expression.Type.CONSTANT,                       IDENTIFIER);
         addExpressionSyntax(Expression.Type.CONSTANT,                       Expression.Type.NUMBER);
+        addExpressionSyntax(Expression.Type.CONSTANT,                       Expression.Type.MASK, Expression.Type.CONSTANT);
+
+        //addExpressionSyntax(Expression.Type.IMM_VALUE,                      POUND, Expression.Type.WORD);
+        addExpressionSyntax(Expression.Type.IMM_VALUE, of(MODIFIER_IMM, 1), POUND, Expression.Type.CONSTANT);
 
         addStatementSyntax(Statement.Type.COMMENT,                          Expression.Type.COMMENT);
         addStatementSyntax(Statement.Type.LABEL_DEF,                        Expression.Type.LABEL_DEF);

@@ -105,6 +105,20 @@ public class ProgramAssembler {
                     if (instrStmt.getConstantRef().isPresent()) {
                         int realValue = constants.get(instrStmt.getConstantRef().get()).getValue();
 
+                        // apply a mask, if necessary
+                        if (instrStmt.getConstantMask().isPresent()) {
+                            switch (instrStmt.getConstantMask().get()) {
+                                case MODIFIER_MASK_HI:
+                                    realValue >>= 8;
+                                    break;
+                                case MODIFIER_MASK_LO:
+                                    realValue &= 0xFF;
+                                    break;
+                                default:
+                                    throw new AssertionError("Unhandled case " + instrStmt.getConstantMask().get().name());
+                            }
+                        }
+
                         if (instrStmt.getAddressingMode() == AddressingMode.REL) {
                             // the offset is relative to the address following the current instruction
                             // since the addressing mode is always relative (1 byte operand), we can
@@ -113,8 +127,17 @@ public class ProgramAssembler {
                         } else {
                             operand = realValue;
 
+                            int realSize = constants.get(instrStmt.getConstantRef().get()).getSize();
+                            if (instrStmt.getConstantMask().isPresent()) {
+                                realSize = 1;
+                            }
+
+                            if (realAddrMode == AddressingMode.IMM && realSize != 1) {
+                                throw new AssemblerException("Immediate value must be exactly one byte", stmt.getLine());
+                            }
+
                             // if it's only one word, then we need to use zero-page mode
-                            if (constants.get(instrStmt.getConstantRef().get()).getSize() == 1) {
+                            if (realSize == 1 && realAddrMode != AddressingMode.IMM) {
                                 realAddrMode = AddressingMode.ZRP;
                             }
                         }
@@ -292,8 +315,8 @@ public class ProgramAssembler {
             }
 
             if (i == 0) {
-                 result = resolved;
-                 System.out.println("E -> " + result);
+                result = resolved;
+                System.out.println("E -> " + result);
             } else {
                 switch (constDefStmt.getOperators().get(i - 1)) {
                     case ADD:
@@ -331,7 +354,7 @@ public class ProgramAssembler {
             }
         }
 
-         return max;
+        return max;
     }
 
 }

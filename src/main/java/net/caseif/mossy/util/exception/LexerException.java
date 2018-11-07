@@ -43,13 +43,13 @@ public class LexerException extends InvalidAssemblyException {
 
         sb.append("    ");
 
-        for (int i = 0; i < col; i++) {
+        for (int i = 0; i <= col; i++) {
             sb.append("~");
         }
 
         sb.append("^");
 
-        for (int i = col + 1; i < line.length(); i++) {
+        for (int i = col + 2; i < line.length(); i++) {
             sb.append("~");
         }
 

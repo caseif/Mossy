@@ -31,16 +31,14 @@ import static com.google.common.base.Preconditions.checkState;
 import net.caseif.moslib.AddressingMode;
 import net.caseif.moslib.Mnemonic;
 import net.caseif.mossy.util.OperatorType;
+import net.caseif.mossy.util.exception.AssemblerException;
+import net.caseif.mossy.util.exception.ParserException;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import java.util.function.Predicate;
 
 public abstract class Statement {
 
@@ -107,8 +105,9 @@ public abstract class Statement {
         private final int operand;
         private final int operandLength;
         private final String constantRef;
+        private final ValueType constantMask;
 
-        InstructionStatement(List<TypedValue> values, int line) {
+        InstructionStatement(List<TypedValue> values, int line) throws AssemblerException {
             super(Type.INSTRUCTION, line);
 
             // value format is [mnemonic, (imm_value | const_ref | target)]
@@ -126,6 +125,7 @@ public abstract class Statement {
                 operand = 0;
                 operandLength = 0;
                 constantRef = null;
+                constantMask = null;
             } else {
                 // operand was supplied
 
@@ -135,29 +135,54 @@ public abstract class Statement {
 
                     constantRef = getValue(values, ValueType.STRING_LITERAL);
 
-                    addrMode = mnemonic.getType() == Mnemonic.Type.BRANCH ? AddressingMode.REL : AddressingMode.ABS;
+                    if (hasValue(values, ValueType.MODIFIER_IMM)) {
+                        addrMode = AddressingMode.IMM;
+                    } else {
+                        addrMode = mnemonic.getType() == Mnemonic.Type.BRANCH ? AddressingMode.REL : AddressingMode.ABS;
+                    }
+
+                    if (hasValue(values, ValueType.MODIFIER_MASK_HI)) {
+                        constantMask = ValueType.MODIFIER_MASK_HI;
+                    } else if (hasValue(values, ValueType.MODIFIER_MASK_LO)) {
+                        constantMask = ValueType.MODIFIER_MASK_LO;
+                    } else {
+                        constantMask = null;
+                    }
 
                     operand = 0;
                     operandLength = 0;
-
                 } else if (hasValue(values, ValueType.IMM_LITERAL)) {
-                    operand = getValue(values, ValueType.IMM_LITERAL);
+                    int tempOperand = getValue(values, ValueType.IMM_LITERAL);
+
+                    if (hasValue(values, ValueType.MODIFIER_MASK_HI)) {
+                        tempOperand >>= 8;
+                    } else if (hasValue(values, ValueType.MODIFIER_MASK_LO)) {
+                        tempOperand &= 0xFF;
+                    }
+
+                    operand = tempOperand;
 
                     if (hasValue(values, ValueType.ADDR_MODE)) {
                         // operand is a target
 
                         addrMode = getValue(values, ValueType.ADDR_MODE);
 
-                        operandLength = 0;
+                        operandLength = addrMode.getLength() - 1;
                         constantRef = null;
                     } else {
                         // operand is an immediate value
 
                         operandLength = getValue(values, ValueType.OPERAND_SIZE);
 
+                        if (operandLength != 1) {
+                            throw new AssemblerException("Immediate value must be exactly one byte", line);
+                        }
+
                         addrMode = AddressingMode.IMM;
                         constantRef = null;
                     }
+
+                    constantMask = null;
                 } else {
                     throw new AssertionError(String.format("Unhandled case (%d values)", values.size()));
                 }
@@ -186,6 +211,10 @@ public abstract class Statement {
 
         public Optional<String> getConstantRef() {
             return Optional.ofNullable(constantRef);
+        }
+
+        public Optional<ValueType> getConstantMask() {
+            return Optional.ofNullable(constantMask);
         }
 
     }

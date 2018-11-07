@@ -27,7 +27,11 @@ package net.caseif.mossy.assembly.model;
 
 public enum Directive {
 
-    ORG;
+    ORG,
+    INDEX,
+    MEM,
+    DB,
+    DW;
 
     public static Directive valueOfInsensitive(String name) {
         return valueOf(name.toUpperCase());
