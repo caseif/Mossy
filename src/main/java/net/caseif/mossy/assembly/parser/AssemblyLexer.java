@@ -80,7 +80,6 @@ public class AssemblyLexer {
 
         int curLine = 1;
 
-        int b;
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(input))) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -95,6 +94,8 @@ public class AssemblyLexer {
         List<Token> tokens = new ArrayList<>();
 
         int pos = 0;
+
+        line = line.trim();
 
         while (pos < line.length()) {
             Optional<Pair<Token, Integer>> token;
