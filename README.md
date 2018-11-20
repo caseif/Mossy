@@ -1,6 +1,6 @@
 # Mossy
 
-An assembler for the 6502, written in Java.
+An assembler for the 6502, written in Java. This project aims for feature parity with x816.
 
 ### How to Use
 
@@ -18,13 +18,19 @@ If the last parameter is not provided, the output will be written to
 
 - Support for all addressing modes
 - Label support
+- Named constant support
+- Full arithmetic support
+- Limited masking support (`<` and `>`)
+- Limited directive support (`.org`)
 
 ### Pending
 
-- Most directives
+- Full masking support
+  - Currently cannot be used in constant definitions
+  - Currently cannot be used within arithmetic expressions
+- Full directive support
   - Namely `.db`/`.dw`, `.include`, and `.macro`
-- Named constants
-- Arithmetic operations in constant expressions
+  - Validation of `.index` and `.mem` directives
 
 ### License
 
