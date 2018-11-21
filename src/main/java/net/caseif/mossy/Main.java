@@ -87,7 +87,10 @@ public class Main {
 
             System.out.println(outputPath);
 
+            long start = System.nanoTime();
             assembler.assemble(Files.newOutputStream(outputPath));
+            long end = System.nanoTime();
+            System.out.println("Assembled " + inputPath.toString() + " in " + (end - start) + " ns");
         }
     }
 

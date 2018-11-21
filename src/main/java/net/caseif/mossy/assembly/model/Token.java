@@ -71,7 +71,7 @@ public class Token {
 
     public enum Type implements ExpressionPart {
         COMMENT(EMPTY, ";.*$"),
-        MNEMONIC(ValueType.MNEMONIC, "([A-Z]{3})(?=\\s|$)", Mnemonic::valueOf),
+        MNEMONIC(ValueType.MNEMONIC, constructMnemonicRegex(), Mnemonic::valueOf),
         X(EMPTY, "X(?![A-z0-9])"),
         Y(EMPTY, "Y(?![A-z0-9])"),
         IDENTIFIER(STRING_LITERAL, "([A-z][A-z0-9_]*)"),
@@ -134,6 +134,22 @@ public class Token {
 
             return new Token(this, value, lineNum);
         }
+    }
+
+    public static String constructMnemonicRegex() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("(");
+
+        for (Mnemonic m : Mnemonic.values()) {
+            sb.append(m.name()).append("|");
+        }
+
+        // remove last pipe
+        sb.delete(sb.length() - 1, sb.length());
+
+        sb.append(")(?=\\s|$)");
+
+        return sb.toString();
     }
 
 }
