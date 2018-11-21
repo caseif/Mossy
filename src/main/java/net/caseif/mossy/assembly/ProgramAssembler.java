@@ -40,6 +40,7 @@ import net.caseif.mossy.util.exception.LexerException;
 import net.caseif.mossy.util.exception.ParserException;
 
 import com.google.common.base.Preconditions;
+import net.caseif.mossy.util.tuple.Pair;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -106,7 +107,8 @@ public class ProgramAssembler {
                         int realValue = constants.get(instrStmt.getConstantRef().get()).getValue();
 
                         // apply a mask, if necessary
-                        if (instrStmt.getConstantMask().isPresent()) {
+                        //TODO
+                        /*if (instrStmt.getConstantMask().isPresent()) {
                             switch (instrStmt.getConstantMask().get()) {
                                 case MODIFIER_MASK_HI:
                                     realValue >>= 8;
@@ -117,7 +119,7 @@ public class ProgramAssembler {
                                 default:
                                     throw new AssertionError("Unhandled case " + instrStmt.getConstantMask().get().name());
                             }
-                        }
+                        }*/
 
                         if (instrStmt.getAddressingMode() == AddressingMode.REL) {
                             // the offset is relative to the address following the current instruction
@@ -128,9 +130,9 @@ public class ProgramAssembler {
                             operand = realValue;
 
                             int realSize = constants.get(instrStmt.getConstantRef().get()).getSize();
-                            if (instrStmt.getConstantMask().isPresent()) {
+                            /*if (instrStmt.getConstantMask().isPresent()) {
                                 realSize = 1;
-                            }
+                            }*/
 
                             if (realAddrMode == AddressingMode.IMM && realSize != 1) {
                                 throw new AssemblerException("Immediate value must be exactly one byte", stmt.getLine());
@@ -220,16 +222,24 @@ public class ProgramAssembler {
                         throw new AssemblerException(String.format("Constant %s defined multiple times.", name), stmt.getLine());
                     }
 
-                    List<Integer> sizes = new ArrayList<>(constDefStmt.getSizes());
+                    List<Integer> sizes = new ArrayList<>(constDefStmt.getConstantFormula().getSizes());
 
-                    for (Object v : constDefStmt.getValues()) {
+                    for (Object v : constDefStmt.getConstantFormula().getValues()) {
                         if (v instanceof String) {
                             sizes.add(constants.get(v).getSize());
                         }
                     }
 
-                    int resolvedValue = resolveValue(constDefStmt, constants);
-                    NamedConstant nc = new NamedConstant(name, resolvedValue, max(sizes));
+                    int resolvedValue;
+                    int resolvedSize;
+                    try {
+                        Pair<Integer, Integer> resolved = constDefStmt.getConstantFormula().resolve(constants, constDefStmt.getLine());
+                        resolvedValue = resolved.first();
+                        resolvedSize = resolved.second();
+                    } catch (AssemblerException ex) {
+                        throw new AssemblerException("Failed to resolve constant " + name + ".", ex, constDefStmt.getLine());
+                    }
+                    NamedConstant nc = new NamedConstant(name, resolvedValue, resolvedSize);
 
                     constants.put(name, nc);
 
@@ -288,59 +298,6 @@ public class ProgramAssembler {
         }
 
         return labelDict;
-    }
-
-    private static int resolveValue(Statement.ConstantDefinitionStatement constDefStmt, Map<String, NamedConstant> constants) throws AssemblerException {
-        int maxVal = (int) Math.pow(2, max(constDefStmt.getSizes()) * 8) - 1;
-
-        int result = 0;
-
-        System.out.println(constDefStmt.getOperators());
-
-        for (int i = 0; i < constDefStmt.getValues().size(); i++) {
-            Object val = constDefStmt.getValues().get(i);
-
-            int resolved;
-
-            if (val instanceof Integer) {
-                resolved = (int) val;
-            } else if (val instanceof String) {
-                if (!constants.containsKey(val)) {
-                    throw new AssemblerException("Reference to undefined constant " + val + ".", constDefStmt.getLine());
-                }
-
-                resolved = constants.get(val).getValue();
-            } else {
-                throw new AssertionError("Unhandled case " + val.getClass().getName() + ".");
-            }
-
-            if (i == 0) {
-                result = resolved;
-                System.out.println("E -> " + result);
-            } else {
-                switch (constDefStmt.getOperators().get(i - 1)) {
-                    case ADD:
-                        result += resolved;
-                        System.out.println("+ -> " + result);
-                        break;
-                    case SUBTRACT:
-                        result -= resolved;
-                        System.out.println("- -> " + result);
-                        break;
-                    default:
-                        throw new AssertionError("Unhandled case " + constDefStmt.getOperators().get(i - 1));
-                }
-            }
-        }
-
-        if (result > maxVal) {
-            throw new AssemblerException("Resolved value " + result + " for constant " + constDefStmt.getName()
-                    + " is too large (max value of " + maxVal + ").", constDefStmt.getLine());
-        }
-
-        System.out.println("result = " + result);
-
-        return result;
     }
 
     private static int max(List<Integer> list) {

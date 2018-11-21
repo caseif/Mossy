@@ -50,15 +50,15 @@ import static net.caseif.mossy.assembly.model.Token.Type.RIGHT_PAREN;
 import static net.caseif.mossy.assembly.model.Token.Type.X;
 import static net.caseif.mossy.assembly.model.Token.Type.Y;
 import static net.caseif.mossy.assembly.model.ValueType.ADDR_MODE;
+import static net.caseif.mossy.assembly.model.ValueType.MASK;
 import static net.caseif.mossy.assembly.model.ValueType.MODIFIER_IMM;
-import static net.caseif.mossy.assembly.model.ValueType.MODIFIER_MASK_HI;
-import static net.caseif.mossy.assembly.model.ValueType.MODIFIER_MASK_LO;
 import static net.caseif.mossy.assembly.model.ValueType.OPERAND_SIZE;
 
 import com.google.common.collect.ImmutableList;
 import net.caseif.moslib.AddressingMode;
 import net.caseif.mossy.assembly.model.Expression;
 import net.caseif.mossy.assembly.model.ExpressionPart;
+import net.caseif.mossy.assembly.model.MaskType;
 import net.caseif.mossy.assembly.model.TypedValue;
 import net.caseif.mossy.assembly.model.Statement;
 import net.caseif.mossy.assembly.model.Token;
@@ -104,8 +104,8 @@ public class AssemblyParser {
 
         addExpressionSyntax(Expression.Type.WORD,  of(OPERAND_SIZE, 1),     Expression.Type.MASK, Expression.Type.DWORD);
 
-        addExpressionSyntax(Expression.Type.MASK, of(MODIFIER_MASK_HI, 1),  GREATER_THAN);
-        addExpressionSyntax(Expression.Type.MASK, of(MODIFIER_MASK_LO, 1),  LESS_THAN);
+        addExpressionSyntax(Expression.Type.MASK,                           GREATER_THAN);
+        addExpressionSyntax(Expression.Type.MASK,                           LESS_THAN);
 
         addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.ABX),  Expression.Type.DWORD, COMMA, X);
         addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.ABY),  Expression.Type.DWORD, COMMA, Y);

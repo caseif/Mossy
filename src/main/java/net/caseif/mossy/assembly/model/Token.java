@@ -27,9 +27,8 @@ package net.caseif.mossy.assembly.model;
 
 import static net.caseif.mossy.assembly.model.ValueType.EMPTY;
 import static net.caseif.mossy.assembly.model.ValueType.IMM_LITERAL;
+import static net.caseif.mossy.assembly.model.ValueType.MASK;
 import static net.caseif.mossy.assembly.model.ValueType.MATH_OPERATOR;
-import static net.caseif.mossy.assembly.model.ValueType.MODIFIER_MASK_HI;
-import static net.caseif.mossy.assembly.model.ValueType.MODIFIER_MASK_LO;
 import static net.caseif.mossy.assembly.model.ValueType.STRING_LITERAL;
 
 import net.caseif.moslib.Mnemonic;
@@ -86,8 +85,8 @@ public class Token {
         COLON(EMPTY, ":"),
         COMMA(EMPTY, ","),
         EQUALS(EMPTY, "="),
-        GREATER_THAN(EMPTY, ">", s -> 1),
-        LESS_THAN(EMPTY, "<", s -> 1),
+        GREATER_THAN(MASK, "(>)", s -> MaskType.LOW),
+        LESS_THAN(MASK, "(<)", s -> MaskType.HIGH),
         POUND(EMPTY, "#"),
         PLUS(MATH_OPERATOR, "(\\+)", OperatorType::getOperatorFromChar),
         MINUS(MATH_OPERATOR, "(-)", OperatorType::getOperatorFromChar),

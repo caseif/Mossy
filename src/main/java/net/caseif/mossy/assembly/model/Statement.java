@@ -105,7 +105,7 @@ public abstract class Statement {
         private final int operand;
         private final int operandLength;
         private final String constantRef;
-        private final ValueType constantMask;
+        //private final ValueType constantMask;
 
         InstructionStatement(List<TypedValue> values, int line) throws AssemblerException {
             super(Type.INSTRUCTION, line);
@@ -125,7 +125,7 @@ public abstract class Statement {
                 operand = 0;
                 operandLength = 0;
                 constantRef = null;
-                constantMask = null;
+                //constantMask = null;
             } else {
                 // operand was supplied
 
@@ -141,24 +141,24 @@ public abstract class Statement {
                         addrMode = mnemonic.getType() == Mnemonic.Type.BRANCH ? AddressingMode.REL : AddressingMode.ABS;
                     }
 
-                    if (hasValue(values, ValueType.MODIFIER_MASK_HI)) {
+                    /*if (hasValue(values, ValueType.MODIFIER_MASK_HI)) {
                         constantMask = ValueType.MODIFIER_MASK_HI;
                     } else if (hasValue(values, ValueType.MODIFIER_MASK_LO)) {
                         constantMask = ValueType.MODIFIER_MASK_LO;
                     } else {
                         constantMask = null;
-                    }
+                    }*/
 
                     operand = 0;
                     operandLength = 0;
                 } else if (hasValue(values, ValueType.IMM_LITERAL)) {
                     int tempOperand = getValue(values, ValueType.IMM_LITERAL);
 
-                    if (hasValue(values, ValueType.MODIFIER_MASK_HI)) {
+                    /*if (hasValue(values, ValueType.MODIFIER_MASK_HI)) {
                         tempOperand >>= 8;
                     } else if (hasValue(values, ValueType.MODIFIER_MASK_LO)) {
                         tempOperand &= 0xFF;
-                    }
+                    }*/
 
                     operand = tempOperand;
 
@@ -182,7 +182,7 @@ public abstract class Statement {
                         constantRef = null;
                     }
 
-                    constantMask = null;
+                    //constantMask = null;
                 } else {
                     throw new AssertionError(String.format("Unhandled case (%d values)", values.size()));
                 }
@@ -213,9 +213,9 @@ public abstract class Statement {
             return Optional.ofNullable(constantRef);
         }
 
-        public Optional<ValueType> getConstantMask() {
+        /*public Optional<ValueType> getConstantMask() {
             return Optional.ofNullable(constantMask);
-        }
+        }*/
 
     }
 
@@ -240,52 +240,22 @@ public abstract class Statement {
     public class ConstantDefinitionStatement extends Statement {
 
         private final String name;
-        private final List<Object> values;
-        private final List<Integer> sizes;
-        private final List<OperatorType> operators;
+        private final ConstantFormula constForm;
 
         ConstantDefinitionStatement(List<TypedValue> values, int line) {
             super(Type.NAMED_CONSTANT_DEF, line);
 
             this.name = getValue(values, ValueType.STRING_LITERAL);
 
-            this.values = new ArrayList<>();
-            this.sizes = new ArrayList<>();
-            this.operators = new ArrayList<>();
-
-            for (int i = 1; i < values.size(); i++) {
-                TypedValue v = values.get(i);
-                switch (v.getType()) {
-                    case MATH_OPERATOR:
-                        this.operators.add((OperatorType) v.getValue());
-                        break;
-                    case OPERAND_SIZE:
-                        this.sizes.add((int) v.getValue());
-                        break;
-                    case IMM_LITERAL:
-                    case STRING_LITERAL:
-                        this.values.add(v.getValue());
-                        break;
-                    default:
-                        throw new AssertionError("Unhandled case " + v.getType().name());
-                }
-            }
+            this.constForm = new ConstantFormula(values);
         }
 
         public String getName() {
             return name;
         }
 
-        public List<Object> getValues() {
-            return values;
-        }
-
-        public List<Integer> getSizes() {
-            return sizes;
-        }
-
-        public List<OperatorType> getOperators() {
-            return operators;
+        public ConstantFormula getConstantFormula() {
+            return constForm;
         }
 
     }
