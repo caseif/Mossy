@@ -39,10 +39,10 @@ public class ConstantFormula {
 
     private final int line;
 
-    private final List<Object> values;
-    private final List<Integer> sizes;
-    private final List<MaskType> masks;
-    private final List<OperatorType> operators;
+    private final ArrayList<Object> values;
+    private final ArrayList<Integer> sizes;
+    private final ArrayList<MaskType> masks;
+    private final ArrayList<OperatorType> operators;
 
     ConstantFormula(List<TypedValue> values, int line) {
         this.line = line;
@@ -62,13 +62,16 @@ public class ConstantFormula {
                     index++;
                     break;
                 case OPERAND_SIZE:
+                    extend(this.sizes, index);
                     this.sizes.add(index, (int) v.getValue());
                     break;
                 case NUMBER_LITERAL:
                 case STRING_LITERAL:
+                    extend(this.values, index);
                     this.values.add(index, v.getValue());
                     break;
                 case MASK:
+                    extend(this.masks, index);
                     this.masks.add(index, (MaskType) v.getValue());
                     break;
                 default:
@@ -162,18 +165,10 @@ public class ConstantFormula {
         return Pair.of(result, maxSize);
     }
 
-    private static int max(List<Integer> list) {
-        checkArgument(list.size() > 0, "List must not be empty.");
-
-        int max = Integer.MIN_VALUE;
-
-        for (int v : list) {
-            if (v > max) {
-                max = v;
-            }
+    private static void extend(List<?> list, int toIndex) {
+        for (int i = list.size(); i < toIndex; i++) {
+            list.add(null);
         }
-
-        return max;
     }
 
 }
