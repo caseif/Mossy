@@ -71,8 +71,8 @@ public class Token {
     public enum Type implements ExpressionPart {
         COMMENT(EMPTY, ";.*$"),
         MNEMONIC(ValueType.MNEMONIC, constructMnemonicRegex(), m -> Mnemonic.valueOf(m.toUpperCase())),
-        X(EMPTY, "X(?![A-z0-9])"),
-        Y(EMPTY, "Y(?![A-z0-9])"),
+        X(EMPTY, "(?:X|x)(?![A-z0-9])"),
+        Y(EMPTY, "(?:Y|y)(?![A-z0-9])"),
         IDENTIFIER(STRING_LITERAL, "([A-z][A-z0-9_]*)"),
         DIRECTIVE(ValueType.DIRECTIVE, "\\.([A-z]+)", Directive::valueOfInsensitive),
         HEX_QWORD(NUMBER_LITERAL, "\\$([0-9A-Fa-f]{8})", PARSE_HEX),

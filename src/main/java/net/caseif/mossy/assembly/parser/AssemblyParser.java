@@ -106,6 +106,7 @@ public class AssemblyParser {
         addExpressionSyntax(Expression.Type.MASK,                           LESS_THAN);
 
         addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.ABX),  Expression.Type.DWORD, COMMA, X);
+        addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.ABX),  Expression.Type.CONSTANT, COMMA, X);
         addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.ABY),  Expression.Type.DWORD, COMMA, Y);
         addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.ZPX),  Expression.Type.WORD, COMMA, X);
         addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.ZPY),  Expression.Type.WORD, COMMA, Y);

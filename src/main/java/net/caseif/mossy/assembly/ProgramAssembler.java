@@ -114,6 +114,14 @@ public class ProgramAssembler {
                         addrMode = size == 1 ? AddressingMode.ZRP : AddressingMode.ABS;
                     }
 
+                    if (size == 1) {
+                        if (addrMode == AddressingMode.ABX) {
+                            addrMode = AddressingMode.ZPX;
+                        } else if (addrMode == AddressingMode.ABY) {
+                            addrMode = AddressingMode.ZPY;
+                        }
+                    }
+
                     if (addrMode == AddressingMode.REL) {
                         // the offset is relative to the address following the current instruction
                         // since the addressing mode is always relative (1 byte operand), we can
@@ -121,8 +129,9 @@ public class ProgramAssembler {
                         operand -= (curOffset + 2);
                     }
 
-                    if (addrMode == AddressingMode.IMM && size != 1) {
-                        throw new AssemblerException("Immediate instruction operand must be exactly 1 byte.", instrStmt.getLine());
+                    if (addrMode.getLength() < size) {
+                        throw new AssemblerException("Operand for addressing mode " + addrMode.name()
+                                + " must be at most " + addrMode.getLength() + " bytes.", instrStmt.getLine());
                     }
 
                     Optional<Instruction> instrOpt = Instruction.lookup(instrStmt.getMnemonic(), addrMode);
