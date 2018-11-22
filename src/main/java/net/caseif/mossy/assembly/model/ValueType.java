@@ -35,6 +35,7 @@ public enum ValueType {
     ADDR_MODE,
     OPERAND_SIZE,
     DIRECTIVE,
+    OPERAND_LIST_ELEMENT,
     MATH_OPERATOR,
     MODIFIER_IMM
 

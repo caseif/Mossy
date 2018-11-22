@@ -62,6 +62,7 @@ public class Expression {
         LABEL_DEF,
         NAMED_CONSTANT_DEF,
         DIRECTIVE,
+        OPERAND_LIST,
         QWORD,
         DWORD,
         WORD,

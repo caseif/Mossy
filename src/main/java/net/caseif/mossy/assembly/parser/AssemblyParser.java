@@ -51,6 +51,7 @@ import static net.caseif.mossy.assembly.model.Token.Type.Y;
 import static net.caseif.mossy.assembly.model.TypedValue.of;
 import static net.caseif.mossy.assembly.model.ValueType.ADDR_MODE;
 import static net.caseif.mossy.assembly.model.ValueType.MODIFIER_IMM;
+import static net.caseif.mossy.assembly.model.ValueType.OPERAND_LIST_ELEMENT;
 import static net.caseif.mossy.assembly.model.ValueType.OPERAND_SIZE;
 
 import com.google.common.collect.ImmutableList;
@@ -88,6 +89,7 @@ public class AssemblyParser {
 
         addExpressionSyntax(Expression.Type.NAMED_CONSTANT_DEF,             IDENTIFIER, EQUALS, Expression.Type.CONSTANT);
 
+        addExpressionSyntax(Expression.Type.DIRECTIVE,                      DIRECTIVE, Expression.Type.OPERAND_LIST);
         addExpressionSyntax(Expression.Type.DIRECTIVE,                      DIRECTIVE, Expression.Type.CONSTANT);
         addExpressionSyntax(Expression.Type.DIRECTIVE,                      DIRECTIVE);
 
@@ -136,6 +138,9 @@ public class AssemblyParser {
 
         //addExpressionSyntax(Expression.Type.IMM_VALUE,                      POUND, Expression.Type.WORD);
         addExpressionSyntax(Expression.Type.IMM_VALUE, of(MODIFIER_IMM, 1), POUND, Expression.Type.CONSTANT);
+
+        addExpressionSyntax(Expression.Type.OPERAND_LIST, of(OPERAND_LIST_ELEMENT, 1),  Expression.Type.CONSTANT, COMMA, Expression.Type.OPERAND_LIST);
+        addExpressionSyntax(Expression.Type.OPERAND_LIST, of(OPERAND_LIST_ELEMENT, 1),  Expression.Type.CONSTANT);
 
         addStatementSyntax(Statement.Type.COMMENT,                          Expression.Type.COMMENT);
         addStatementSyntax(Statement.Type.LABEL_DEF,                        Expression.Type.LABEL_DEF);
@@ -316,8 +321,16 @@ public class AssemblyParser {
         }
 
         for (ExpressionPart nextPart : pattern) {
+            if (curTokens.size() == 0) {
+                // this is possible because we don't recurse into sub-expressions, which can contains multiple tokens
+                System.out.println("Exhausted token stack, failing");
+
+                return Optional.empty();
+            }
+
             if (nextPart instanceof Token.Type) {
                 // if the next token isn't what we expect, then the pattern fails
+                System.out.println("size: " + curTokens.size());
                 if (curTokens.get(0).getType() != nextPart) {
                     System.out.println("    Failed on token " + curTokens.get(0).getType());
                     return Optional.empty();
