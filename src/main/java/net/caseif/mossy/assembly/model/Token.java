@@ -70,7 +70,7 @@ public class Token {
 
     public enum Type implements ExpressionPart {
         COMMENT(EMPTY, ";.*$"),
-        MNEMONIC(ValueType.MNEMONIC, constructMnemonicRegex(), Mnemonic::valueOf),
+        MNEMONIC(ValueType.MNEMONIC, constructMnemonicRegex(), m -> Mnemonic.valueOf(m.toUpperCase())),
         X(EMPTY, "X(?![A-z0-9])"),
         Y(EMPTY, "Y(?![A-z0-9])"),
         IDENTIFIER(STRING_LITERAL, "([A-z][A-z0-9_]*)"),
@@ -140,7 +140,8 @@ public class Token {
         sb.append("(");
 
         for (Mnemonic m : Mnemonic.values()) {
-            sb.append(m.name()).append("|");
+            sb.append(m.name()).append('|');
+            sb.append(m.name().toLowerCase()).append('|');
         }
 
         // remove last pipe
