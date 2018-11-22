@@ -116,12 +116,12 @@ public class AssemblyParser {
         addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.ABY),  Expression.Type.CONSTANT, COMMA, Y);
         addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.ABS),  Expression.Type.DWORD);
         addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.ZRP),  Expression.Type.WORD);
-        addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.IND),  LEFT_PAREN, Expression.Type.DWORD, RIGHT_PAREN);
-        addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.IND),  LEFT_PAREN, Expression.Type.CONSTANT, RIGHT_PAREN);
         addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.IZX),  LEFT_PAREN, Expression.Type.WORD, COMMA, X, RIGHT_PAREN);
         addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.IZX),  LEFT_PAREN, Expression.Type.CONSTANT, COMMA, X, RIGHT_PAREN);
         addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.IZY),  LEFT_PAREN, Expression.Type.WORD, RIGHT_PAREN, COMMA, Y);
         addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.IZY),  LEFT_PAREN, Expression.Type.CONSTANT, RIGHT_PAREN, COMMA, Y);
+        addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.IND),  LEFT_PAREN, Expression.Type.DWORD, RIGHT_PAREN);
+        addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.IND),  LEFT_PAREN, Expression.Type.CONSTANT, RIGHT_PAREN);
 
         addExpressionSyntax(Expression.Type.NUMBER, of(OPERAND_SIZE, 4),    Expression.Type.QWORD);
         addExpressionSyntax(Expression.Type.NUMBER, of(OPERAND_SIZE, 2),    Expression.Type.DWORD);
@@ -330,7 +330,6 @@ public class AssemblyParser {
 
             if (nextPart instanceof Token.Type) {
                 // if the next token isn't what we expect, then the pattern fails
-                System.out.println("size: " + curTokens.size());
                 if (curTokens.get(0).getType() != nextPart) {
                     System.out.println("    Failed on token " + curTokens.get(0).getType());
                     return Optional.empty();
