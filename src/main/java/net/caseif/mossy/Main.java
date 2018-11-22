@@ -26,10 +26,7 @@
 package net.caseif.mossy;
 
 import net.caseif.mossy.assembly.ProgramAssembler;
-import net.caseif.mossy.util.exception.AssemblerException;
 import net.caseif.mossy.util.exception.InvalidAssemblyException;
-import net.caseif.mossy.util.exception.LexerException;
-import net.caseif.mossy.util.exception.ParserException;
 
 import java.io.IOException;
 import java.io.InputStream;

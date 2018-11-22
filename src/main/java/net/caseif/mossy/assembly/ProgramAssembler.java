@@ -27,6 +27,7 @@ package net.caseif.mossy.assembly;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+import com.google.common.base.Preconditions;
 import net.caseif.moslib.AddressingMode;
 import net.caseif.moslib.Instruction;
 import net.caseif.moslib.Mnemonic;
@@ -38,8 +39,6 @@ import net.caseif.mossy.assembly.parser.AssemblyParser;
 import net.caseif.mossy.util.exception.AssemblerException;
 import net.caseif.mossy.util.exception.LexerException;
 import net.caseif.mossy.util.exception.ParserException;
-
-import com.google.common.base.Preconditions;
 import net.caseif.mossy.util.tuple.Pair;
 
 import java.io.ByteArrayOutputStream;
@@ -47,7 +46,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;

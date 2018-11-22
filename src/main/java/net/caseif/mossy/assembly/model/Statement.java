@@ -30,13 +30,10 @@ import static com.google.common.base.Preconditions.checkState;
 
 import net.caseif.moslib.AddressingMode;
 import net.caseif.moslib.Mnemonic;
-import net.caseif.mossy.util.OperatorType;
 import net.caseif.mossy.util.exception.AssemblerException;
-import net.caseif.mossy.util.exception.ParserException;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 

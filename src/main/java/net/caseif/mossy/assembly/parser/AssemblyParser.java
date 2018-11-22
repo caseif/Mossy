@@ -25,9 +25,6 @@
 
 package net.caseif.mossy.assembly.parser;
 
-import static net.caseif.mossy.assembly.model.Token.Type.GREATER_THAN;
-import static net.caseif.mossy.assembly.model.Token.Type.LESS_THAN;
-import static net.caseif.mossy.assembly.model.TypedValue.of;
 import static net.caseif.mossy.assembly.model.Token.Type.BIN_DWORD;
 import static net.caseif.mossy.assembly.model.Token.Type.BIN_QWORD;
 import static net.caseif.mossy.assembly.model.Token.Type.BIN_WORD;
@@ -37,11 +34,13 @@ import static net.caseif.mossy.assembly.model.Token.Type.COMMENT;
 import static net.caseif.mossy.assembly.model.Token.Type.DEC_WORD;
 import static net.caseif.mossy.assembly.model.Token.Type.DIRECTIVE;
 import static net.caseif.mossy.assembly.model.Token.Type.EQUALS;
+import static net.caseif.mossy.assembly.model.Token.Type.GREATER_THAN;
 import static net.caseif.mossy.assembly.model.Token.Type.HEX_DWORD;
 import static net.caseif.mossy.assembly.model.Token.Type.HEX_QWORD;
 import static net.caseif.mossy.assembly.model.Token.Type.HEX_WORD;
 import static net.caseif.mossy.assembly.model.Token.Type.IDENTIFIER;
 import static net.caseif.mossy.assembly.model.Token.Type.LEFT_PAREN;
+import static net.caseif.mossy.assembly.model.Token.Type.LESS_THAN;
 import static net.caseif.mossy.assembly.model.Token.Type.MINUS;
 import static net.caseif.mossy.assembly.model.Token.Type.MNEMONIC;
 import static net.caseif.mossy.assembly.model.Token.Type.PLUS;
@@ -49,8 +48,8 @@ import static net.caseif.mossy.assembly.model.Token.Type.POUND;
 import static net.caseif.mossy.assembly.model.Token.Type.RIGHT_PAREN;
 import static net.caseif.mossy.assembly.model.Token.Type.X;
 import static net.caseif.mossy.assembly.model.Token.Type.Y;
+import static net.caseif.mossy.assembly.model.TypedValue.of;
 import static net.caseif.mossy.assembly.model.ValueType.ADDR_MODE;
-import static net.caseif.mossy.assembly.model.ValueType.MASK;
 import static net.caseif.mossy.assembly.model.ValueType.MODIFIER_IMM;
 import static net.caseif.mossy.assembly.model.ValueType.OPERAND_SIZE;
 
@@ -58,10 +57,9 @@ import com.google.common.collect.ImmutableList;
 import net.caseif.moslib.AddressingMode;
 import net.caseif.mossy.assembly.model.Expression;
 import net.caseif.mossy.assembly.model.ExpressionPart;
-import net.caseif.mossy.assembly.model.MaskType;
-import net.caseif.mossy.assembly.model.TypedValue;
 import net.caseif.mossy.assembly.model.Statement;
 import net.caseif.mossy.assembly.model.Token;
+import net.caseif.mossy.assembly.model.TypedValue;
 import net.caseif.mossy.assembly.model.ValueType;
 import net.caseif.mossy.util.exception.ParserException;
 import net.caseif.mossy.util.tuple.Pair;
