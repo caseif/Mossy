@@ -88,6 +88,7 @@ public class AssemblyParser {
 
         addExpressionSyntax(Expression.Type.NAMED_CONSTANT_DEF,             IDENTIFIER, EQUALS, Expression.Type.CONSTANT);
 
+        addExpressionSyntax(Expression.Type.DIRECTIVE,                      DIRECTIVE, Expression.Type.CONSTANT);
         addExpressionSyntax(Expression.Type.DIRECTIVE,                      DIRECTIVE);
 
         addExpressionSyntax(Expression.Type.QWORD, of(OPERAND_SIZE, 4),     HEX_QWORD);
@@ -105,16 +106,20 @@ public class AssemblyParser {
         addExpressionSyntax(Expression.Type.MASK,                           GREATER_THAN);
         addExpressionSyntax(Expression.Type.MASK,                           LESS_THAN);
 
+        addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.ZPX),  Expression.Type.WORD, COMMA, X);
+        addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.ZPY),  Expression.Type.WORD, COMMA, Y);
         addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.ABX),  Expression.Type.DWORD, COMMA, X);
         addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.ABX),  Expression.Type.CONSTANT, COMMA, X);
         addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.ABY),  Expression.Type.DWORD, COMMA, Y);
-        addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.ZPX),  Expression.Type.WORD, COMMA, X);
-        addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.ZPY),  Expression.Type.WORD, COMMA, Y);
+        addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.ABY),  Expression.Type.CONSTANT, COMMA, Y);
         addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.ABS),  Expression.Type.DWORD);
         addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.ZRP),  Expression.Type.WORD);
         addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.IND),  LEFT_PAREN, Expression.Type.DWORD, RIGHT_PAREN);
+        addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.IND),  LEFT_PAREN, Expression.Type.CONSTANT, RIGHT_PAREN);
         addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.IZX),  LEFT_PAREN, Expression.Type.WORD, COMMA, X, RIGHT_PAREN);
+        addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.IZX),  LEFT_PAREN, Expression.Type.CONSTANT, COMMA, X, RIGHT_PAREN);
         addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.IZY),  LEFT_PAREN, Expression.Type.WORD, RIGHT_PAREN, COMMA, Y);
+        addExpressionSyntax(Expression.Type.TARGET, of(ADDR_MODE, AddressingMode.IZY),  LEFT_PAREN, Expression.Type.CONSTANT, RIGHT_PAREN, COMMA, Y);
 
         addExpressionSyntax(Expression.Type.NUMBER, of(OPERAND_SIZE, 4),    Expression.Type.QWORD);
         addExpressionSyntax(Expression.Type.NUMBER, of(OPERAND_SIZE, 2),    Expression.Type.DWORD);
