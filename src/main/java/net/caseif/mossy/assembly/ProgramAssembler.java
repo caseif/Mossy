@@ -26,6 +26,7 @@
 package net.caseif.mossy.assembly;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkState;
 
 import com.google.common.base.Preconditions;
 import net.caseif.moslib.AddressingMode;
@@ -69,8 +70,8 @@ public class ProgramAssembler {
         }
     }
 
-    public void assemble(OutputStream output) throws IOException, AssemblerException, ParserException {
-        Preconditions.checkState(statements != null, "No program loaded.");
+    public void assemble(OutputStream output) throws IOException, AssemblerException {
+        checkState(statements != null, "No program loaded.");
 
         Map<String, NamedConstant> labelDict = buildLabelDictionary();
 
@@ -97,62 +98,39 @@ public class ProgramAssembler {
                 case INSTRUCTION: {
                     Statement.InstructionStatement instrStmt = (Statement.InstructionStatement) stmt;
 
-                    int operand;
+                    int operand = 0;
+                    int size = 0;
 
-                    AddressingMode realAddrMode = instrStmt.getAddressingMode();
-
-                    if (instrStmt.getConstantRef().isPresent()) {
-                        int realValue = constants.get(instrStmt.getConstantRef().get()).getValue();
-
-                        // apply a mask, if necessary
-                        //TODO
-                        /*if (instrStmt.getConstantMask().isPresent()) {
-                            switch (instrStmt.getConstantMask().get()) {
-                                case MODIFIER_MASK_HI:
-                                    realValue >>= 8;
-                                    break;
-                                case MODIFIER_MASK_LO:
-                                    realValue &= 0xFF;
-                                    break;
-                                default:
-                                    throw new AssertionError("Unhandled case " + instrStmt.getConstantMask().get().name());
-                            }
-                        }*/
-
-                        if (instrStmt.getAddressingMode() == AddressingMode.REL) {
-                            // the offset is relative to the address following the current instruction
-                            // since the addressing mode is always relative (1 byte operand), we can
-                            // just add 2 to the current offset to move it past the operand.
-                            operand = realValue - (curOffset + 2);
-                        } else {
-                            operand = realValue;
-
-                            int realSize = constants.get(instrStmt.getConstantRef().get()).getSize();
-                            /*if (instrStmt.getConstantMask().isPresent()) {
-                                realSize = 1;
-                            }*/
-
-                            if (realAddrMode == AddressingMode.IMM && realSize != 1) {
-                                throw new AssemblerException("Immediate value must be exactly one byte", stmt.getLine());
-                            }
-
-                            // if it's only one word, then we need to use zero-page mode
-                            if (realSize == 1 && realAddrMode != AddressingMode.IMM) {
-                                realAddrMode = AddressingMode.ZRP;
-                            }
-                        }
-                    } else if (instrStmt.getAddressingMode() != AddressingMode.IMP) {
-                        operand = instrStmt.getOperand();
-                    } else {
-                        operand = -1;
+                    if (instrStmt.getConstantFormula().isPresent()) {
+                        Pair<Integer, Integer> resolution = instrStmt.getConstantFormula().get().resolve(constants);
+                        operand = resolution.first();
+                        size = resolution.second();
                     }
 
-                    Optional<Instruction> instrOpt = Instruction.lookup(instrStmt.getMnemonic(), realAddrMode);
+                    AddressingMode addrMode;
+                    if (instrStmt.getAddressingMode().isPresent()) {
+                        addrMode = instrStmt.getAddressingMode().get();
+                    } else {
+                        addrMode = size == 1 ? AddressingMode.ZRP : AddressingMode.ABS;
+                    }
+
+                    if (addrMode == AddressingMode.REL) {
+                        // the offset is relative to the address following the current instruction
+                        // since the addressing mode is always relative (1 byte operand), we can
+                        // just add 2 to the current offset to move it past the operand.
+                        operand -= (curOffset + 2);
+                    }
+
+                    if (addrMode == AddressingMode.IMM && size != 1) {
+                        throw new AssemblerException("Immediate instruction operand must be exactly 1 byte.", instrStmt.getLine());
+                    }
+
+                    Optional<Instruction> instrOpt = Instruction.lookup(instrStmt.getMnemonic(), addrMode);
 
                     if (!instrOpt.isPresent()) {
                         throw new AssemblerException(String.format(
                                 "Instruction %s cannot be used with addressing mode %s.",
-                                instrStmt.getMnemonic(), realAddrMode
+                                instrStmt.getMnemonic(), addrMode
                         ), instrStmt.getLine());
                     }
 
@@ -160,17 +138,17 @@ public class ProgramAssembler {
 
                     curOffset += 1;
 
-                    if (realAddrMode != AddressingMode.IMP) {
+                    if (addrMode != AddressingMode.IMP) {
                         // we only need to adjust the operand to account for the offset if
                         // we're jumping to an absolute address. we should keep it intact
                         // if we're using an indirect value.
 
                         if (instrStmt.getMnemonic().getType() == Mnemonic.Type.JUMP
-                                && realAddrMode == AddressingMode.ABS) {
+                                && addrMode == AddressingMode.ABS) {
                             operand += orgOffset;
                         }
 
-                        switch (realAddrMode.getLength() - 1) {
+                        switch (addrMode.getLength() - 1) {
                             case 1:
                                 intermediate.write((byte) operand);
 
@@ -181,10 +159,10 @@ public class ProgramAssembler {
 
                                 break;
                             default: // all 6502 addressing modes take either a word or a dword
-                                throw new AssertionError("Unhandled case " + (instrStmt.getAddressingMode().getLength() - 1));
+                                throw new AssertionError("Unhandled case " + (addrMode.getLength() - 1));
                         }
 
-                        curOffset += instrStmt.getAddressingMode().getLength() - 1;
+                        curOffset += addrMode.getLength() - 1;
                     }
 
                     break;
@@ -231,7 +209,7 @@ public class ProgramAssembler {
                     int resolvedValue;
                     int resolvedSize;
                     try {
-                        Pair<Integer, Integer> resolved = constDefStmt.getConstantFormula().resolve(constants, constDefStmt.getLine());
+                        Pair<Integer, Integer> resolved = constDefStmt.getConstantFormula().resolve(constants);
                         resolvedValue = resolved.first();
                         resolvedSize = resolved.second();
                     } catch (AssemblerException ex) {
@@ -256,46 +234,73 @@ public class ProgramAssembler {
     }
 
     // helper method for reading and indexing all label definitions
-    private Map<String, NamedConstant> buildLabelDictionary() throws ParserException {
-        Map<String, NamedConstant> labelDict = new HashMap<>();
+    private Map<String, NamedConstant> buildLabelDictionary() throws AssemblerException {
+        Map<String, NamedConstant> constantDict = new HashMap<>();
+        List<String> definedLabels = new ArrayList<>();
 
-        int pc = 0;
-
-        // first pass, for building the label dictionary
+        // first pass, for discovering which labels are defined (since they can be used ahead of their definition)
         for (Statement stmt : statements) {
-            switch (stmt.getType()) {
-                case INSTRUCTION: {
-                    Statement.InstructionStatement instrStmt = (Statement.InstructionStatement) stmt;
-
-                    // just increment the program counter appropriately
-                    pc += instrStmt.getAddressingMode().getLength();
-
-                    break;
-                }
-                case LABEL_DEF: {
-                    Statement.LabelDefinitionStatement lblStmt = (Statement.LabelDefinitionStatement) stmt;
-
-                    if (labelDict.containsKey(lblStmt.getName())) {
-                        throw new ParserException("Found duplicate label " + lblStmt.getName() + "!", lblStmt.getLine());
-                    }
-
-                    // add the label to the dictionary - no need to increment the PC
-                    labelDict.put(lblStmt.getName(), new NamedConstant(lblStmt.getName(), pc, 2));
-
-                    break;
-                }
-                case NAMED_CONSTANT_DEF:
-                case DIRECTIVE:
-                case COMMENT: {
-                    continue;
-                }
-                default: {
-                    throw new AssertionError("Unhandled case " + stmt.getType().name());
-                }
+            if  (stmt.getType() == Statement.Type.LABEL_DEF) {
+                definedLabels.add(((Statement.LabelDefinitionStatement) stmt).getName());
             }
         }
 
-        return labelDict;
+        // construct a temporary combined label dictionary which includes all labels
+        Map<String, NamedConstant> combinedConstantDict = new HashMap<>(constantDict);
+        for (String label : definedLabels) {
+            // actual value doesn't matter, size is always 2 for label references
+            combinedConstantDict.put(label, new NamedConstant(label, 0, 2));
+        }
+
+        int pc = 0;
+
+        // second pass, for building the label dictionary
+        for (Statement stmt : statements) {
+            try {
+                switch (stmt.getType()) {
+                    case INSTRUCTION: {
+                        Statement.InstructionStatement instrStmt = (Statement.InstructionStatement) stmt;
+
+                        // just increment the program counter appropriately
+                        if (instrStmt.getAddressingMode().isPresent()) {
+                            pc += instrStmt.getAddressingMode().get().getLength();
+                        } else {
+                            checkState(instrStmt.getConstantFormula().isPresent());
+
+                            int size = instrStmt.getConstantFormula().get().resolve(combinedConstantDict).second();
+
+                            pc += 1 + size;
+                        }
+
+                        break;
+                    }
+                    case LABEL_DEF: {
+                        Statement.LabelDefinitionStatement lblStmt = (Statement.LabelDefinitionStatement) stmt;
+
+                        if (constantDict.containsKey(lblStmt.getName())) {
+                            throw new AssemblerException("Found duplicate label " + lblStmt.getName() + "!", lblStmt.getLine());
+                        }
+
+                        // add the label to the dictionary - no need to increment the PC
+                        constantDict.put(lblStmt.getName(), new NamedConstant(lblStmt.getName(), pc, 2));
+
+                        break;
+                    }
+                    case NAMED_CONSTANT_DEF:
+                    case DIRECTIVE:
+                    case COMMENT: {
+                        continue;
+                    }
+                    default: {
+                        throw new AssertionError("Unhandled case " + stmt.getType().name());
+                    }
+                }
+            } catch (Throwable t) {
+                throw new AssemblerException(t, stmt.getLine());
+            }
+        }
+
+        return constantDict;
     }
 
     private static int max(List<Integer> list) {

@@ -37,12 +37,16 @@ import java.util.Map;
 
 public class ConstantFormula {
 
+    private final int line;
+
     private final List<Object> values;
     private final List<Integer> sizes;
     private final List<MaskType> masks;
     private final List<OperatorType> operators;
 
-    ConstantFormula(List<TypedValue> values) {
+    ConstantFormula(List<TypedValue> values, int line) {
+        this.line = line;
+
         this.values = new ArrayList<>();
         this.sizes = new ArrayList<>();
         this.masks = new ArrayList<>();
@@ -58,17 +62,17 @@ public class ConstantFormula {
                     index++;
                     break;
                 case OPERAND_SIZE:
-                    this.sizes.add((int) v.getValue());
+                    this.sizes.add(index, (int) v.getValue());
                     break;
-                case IMM_LITERAL:
+                case NUMBER_LITERAL:
                 case STRING_LITERAL:
-                    this.values.add(v.getValue());
+                    this.values.add(index, v.getValue());
                     break;
                 case MASK:
                     this.masks.add(index, (MaskType) v.getValue());
                     break;
                 default:
-                    throw new AssertionError("Unhandled case " + v.getType().name());
+                    break; // just skip
             }
         }
     }
@@ -89,27 +93,27 @@ public class ConstantFormula {
         return operators;
     }
 
-    public Pair<Integer, Integer> resolve(Map<String, NamedConstant> constants, int line) throws AssemblerException {
-        int maxVal = (int) Math.pow(2, max(getSizes()) * 8) - 1;
-
+    public Pair<Integer, Integer> resolve(Map<String, NamedConstant> constants) throws AssemblerException {
         int result = 0;
         int maxSize = 0;
 
         for (int i = 0; i < values.size(); i++) {
             Object val = values.get(i);
-            int size = sizes.get(i);
+            int size;
             MaskType mask = i < masks.size() ? masks.get(i) : null;
 
             int resolved;
 
             if (val instanceof Integer) {
                 resolved = (int) val;
+                size = sizes.get(i);
             } else if (val instanceof String) {
                 if (!constants.containsKey(val)) {
                     throw new AssemblerException("Reference to undefined constant " + val + ".", line);
                 }
 
                 resolved = constants.get(val).getValue();
+                size = constants.get(val).getSize();
             } else {
                 throw new AssertionError("Unhandled case " + val.getClass().getName() + ".");
             }
@@ -127,7 +131,7 @@ public class ConstantFormula {
             if (i == 0) {
                 result = resolved;
             } else {
-                switch (getOperators().get(i - 1)) {
+                switch (operators.get(i - 1)) {
                     case ADD:
                         result += resolved;
                         System.out.println("+ -> 0x" + Integer.toHexString(result));
@@ -145,6 +149,8 @@ public class ConstantFormula {
                 maxSize = size;
             }
         }
+
+        int maxVal = (int) Math.pow(2, maxSize * 8) - 1;
 
         if (result > maxVal) {
             throw new AssemblerException("Resolved value " + result

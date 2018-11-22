@@ -29,7 +29,7 @@ public enum ValueType {
 
     EMPTY,
     MNEMONIC,
-    IMM_LITERAL,
+    NUMBER_LITERAL,
     STRING_LITERAL,
     MASK,
     ADDR_MODE,

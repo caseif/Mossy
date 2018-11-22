@@ -99,10 +99,7 @@ public abstract class Statement {
 
         private final Mnemonic mnemonic;
         private final AddressingMode addrMode;
-        private final int operand;
-        private final int operandLength;
-        private final String constantRef;
-        //private final ValueType constantMask;
+        private final ConstantFormula constForm;
 
         InstructionStatement(List<TypedValue> values, int line) throws AssemblerException {
             super(Type.INSTRUCTION, line);
@@ -119,69 +116,23 @@ public abstract class Statement {
 
                 addrMode = AddressingMode.IMP;
 
-                operand = 0;
-                operandLength = 0;
-                constantRef = null;
-                //constantMask = null;
+                constForm = null;
             } else {
                 // operand was supplied
 
-                // operand is a constant ref
-                if (hasValue(values, ValueType.STRING_LITERAL)) {
-                    // operand is a constant reference
+                constForm = new ConstantFormula(values, line);
 
-                    constantRef = getValue(values, ValueType.STRING_LITERAL);
-
-                    if (hasValue(values, ValueType.MODIFIER_IMM)) {
-                        addrMode = AddressingMode.IMM;
-                    } else {
-                        addrMode = mnemonic.getType() == Mnemonic.Type.BRANCH ? AddressingMode.REL : AddressingMode.ABS;
-                    }
-
-                    /*if (hasValue(values, ValueType.MODIFIER_MASK_HI)) {
-                        constantMask = ValueType.MODIFIER_MASK_HI;
-                    } else if (hasValue(values, ValueType.MODIFIER_MASK_LO)) {
-                        constantMask = ValueType.MODIFIER_MASK_LO;
-                    } else {
-                        constantMask = null;
-                    }*/
-
-                    operand = 0;
-                    operandLength = 0;
-                } else if (hasValue(values, ValueType.IMM_LITERAL)) {
-                    int tempOperand = getValue(values, ValueType.IMM_LITERAL);
-
-                    /*if (hasValue(values, ValueType.MODIFIER_MASK_HI)) {
-                        tempOperand >>= 8;
-                    } else if (hasValue(values, ValueType.MODIFIER_MASK_LO)) {
-                        tempOperand &= 0xFF;
-                    }*/
-
-                    operand = tempOperand;
-
-                    if (hasValue(values, ValueType.ADDR_MODE)) {
-                        // operand is a target
-
-                        addrMode = getValue(values, ValueType.ADDR_MODE);
-
-                        operandLength = addrMode.getLength() - 1;
-                        constantRef = null;
-                    } else {
-                        // operand is an immediate value
-
-                        operandLength = getValue(values, ValueType.OPERAND_SIZE);
-
-                        if (operandLength != 1) {
-                            throw new AssemblerException("Immediate value must be exactly one byte", line);
-                        }
-
-                        addrMode = AddressingMode.IMM;
-                        constantRef = null;
-                    }
-
-                    //constantMask = null;
+                if (hasValue(values, ValueType.MODIFIER_IMM)) {
+                    System.out.println("IMM!");
+                    addrMode = AddressingMode.IMM;
+                } else if (mnemonic.getType() == Mnemonic.Type.BRANCH) {
+                    // branch instructions always use relative addressing
+                    addrMode = AddressingMode.REL;
+                } else if (hasValue(values, ValueType.ADDR_MODE)) {
+                    addrMode = Statement.getValue(values, ValueType.ADDR_MODE);
                 } else {
-                    throw new AssertionError(String.format("Unhandled case (%d values)", values.size()));
+                    // we'll figure it out later
+                    addrMode = null;
                 }
             }
         }
@@ -190,29 +141,13 @@ public abstract class Statement {
             return mnemonic;
         }
 
-        public AddressingMode getAddressingMode() {
-            return addrMode;
+        public Optional<AddressingMode> getAddressingMode() {
+            return Optional.ofNullable(addrMode);
         }
 
-        public int getOperand() {
-            checkState(addrMode != AddressingMode.IMP, "Cannot get operand for implicit instruction.");
-
-            return operand;
+        public Optional<ConstantFormula> getConstantFormula() {
+            return Optional.ofNullable(constForm);
         }
-
-        public int getOperandLength() {
-            checkState(addrMode == AddressingMode.IMM, "Cannot get operand length for non-immediate instruction.");
-
-            return operandLength;
-        }
-
-        public Optional<String> getConstantRef() {
-            return Optional.ofNullable(constantRef);
-        }
-
-        /*public Optional<ValueType> getConstantMask() {
-            return Optional.ofNullable(constantMask);
-        }*/
 
     }
 
@@ -244,7 +179,7 @@ public abstract class Statement {
 
             this.name = getValue(values, ValueType.STRING_LITERAL);
 
-            this.constForm = new ConstantFormula(values);
+            this.constForm = new ConstantFormula(values, line);
         }
 
         public String getName() {
@@ -270,8 +205,8 @@ public abstract class Statement {
             this.type = getValue(values, ValueType.DIRECTIVE);
 
             if (values.size() > 1) {
-                if (hasValue(values, ValueType.IMM_LITERAL)) {
-                    param = getValue(values, ValueType.IMM_LITERAL);
+                if (hasValue(values, ValueType.NUMBER_LITERAL)) {
+                    param = getValue(values, ValueType.NUMBER_LITERAL);
                 } else if (hasValue(values, ValueType.STRING_LITERAL)) {
                     param = getValue(values, ValueType.STRING_LITERAL);
                 } else {

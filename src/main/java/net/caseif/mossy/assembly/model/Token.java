@@ -26,7 +26,7 @@
 package net.caseif.mossy.assembly.model;
 
 import static net.caseif.mossy.assembly.model.ValueType.EMPTY;
-import static net.caseif.mossy.assembly.model.ValueType.IMM_LITERAL;
+import static net.caseif.mossy.assembly.model.ValueType.NUMBER_LITERAL;
 import static net.caseif.mossy.assembly.model.ValueType.MASK;
 import static net.caseif.mossy.assembly.model.ValueType.MATH_OPERATOR;
 import static net.caseif.mossy.assembly.model.ValueType.STRING_LITERAL;
@@ -75,13 +75,13 @@ public class Token {
         Y(EMPTY, "Y(?![A-z0-9])"),
         IDENTIFIER(STRING_LITERAL, "([A-z][A-z0-9_]*)"),
         DIRECTIVE(ValueType.DIRECTIVE, "\\.([A-z]+)", Directive::valueOfInsensitive),
-        HEX_QWORD(IMM_LITERAL, "\\$([0-9A-Fa-f]{8})", PARSE_HEX),
-        HEX_DWORD(IMM_LITERAL, "\\$([0-9A-Fa-f]{4})", PARSE_HEX),
-        HEX_WORD(IMM_LITERAL, "\\$([0-9A-Fa-f]{2})", PARSE_HEX),
-        DEC_WORD(IMM_LITERAL, "([0-9]{1,3})", PARSE_DEC),
-        BIN_QWORD(IMM_LITERAL, "%([01]{32})", PARSE_BIN),
-        BIN_DWORD(IMM_LITERAL, "%([01]{16})", PARSE_BIN),
-        BIN_WORD(IMM_LITERAL, "%([01]{8})", PARSE_BIN),
+        HEX_QWORD(NUMBER_LITERAL, "\\$([0-9A-Fa-f]{8})", PARSE_HEX),
+        HEX_DWORD(NUMBER_LITERAL, "\\$([0-9A-Fa-f]{4})", PARSE_HEX),
+        HEX_WORD(NUMBER_LITERAL, "\\$([0-9A-Fa-f]{2})", PARSE_HEX),
+        DEC_WORD(NUMBER_LITERAL, "([0-9]{1,3})", PARSE_DEC),
+        BIN_QWORD(NUMBER_LITERAL, "%([01]{32})", PARSE_BIN),
+        BIN_DWORD(NUMBER_LITERAL, "%([01]{16})", PARSE_BIN),
+        BIN_WORD(NUMBER_LITERAL, "%([01]{8})", PARSE_BIN),
         COLON(EMPTY, ":"),
         COMMA(EMPTY, ","),
         EQUALS(EMPTY, "="),
