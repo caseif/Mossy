@@ -111,11 +111,18 @@ public class ProgramAssembler {
                         addrMode = size == 1 ? AddressingMode.ZRP : AddressingMode.ABS;
                     }
 
+                    // this is necessary since X/Y-indexed instructions with a non-numeric opperand default to absolute
                     if (size == 1) {
                         if (addrMode == AddressingMode.ABX) {
-                            addrMode = AddressingMode.ZPX;
+                            // verify the zero-paged variant actually exists
+                            if (Instruction.lookup(instrStmt.getMnemonic(), AddressingMode.ZPX).isPresent()) {
+                                addrMode = AddressingMode.ZPX;
+                            }
                         } else if (addrMode == AddressingMode.ABY) {
-                            addrMode = AddressingMode.ZPY;
+                            // verify the zero-paged variant actually exists
+                            if (Instruction.lookup(instrStmt.getMnemonic(), AddressingMode.ZPY).isPresent()) {
+                                addrMode = AddressingMode.ZPY;
+                            }
                         }
                     }
 
