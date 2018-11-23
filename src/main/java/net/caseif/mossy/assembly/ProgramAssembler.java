@@ -28,10 +28,10 @@ package net.caseif.mossy.assembly;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
-import com.google.common.base.Preconditions;
 import net.caseif.moslib.AddressingMode;
 import net.caseif.moslib.Instruction;
 import net.caseif.moslib.Mnemonic;
+import net.caseif.mossy.assembly.model.ConstantFormula;
 import net.caseif.mossy.assembly.model.NamedConstant;
 import net.caseif.mossy.assembly.model.Statement;
 import net.caseif.mossy.assembly.model.Token;
@@ -51,6 +51,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class ProgramAssembler {
 
@@ -73,25 +74,21 @@ public class ProgramAssembler {
     public void assemble(OutputStream output) throws IOException, AssemblerException {
         checkState(statements != null, "No program loaded.");
 
-        Map<String, NamedConstant> labelDict = buildLabelDictionary();
+        Map<String, NamedConstant> constantDict = buildConstantDictionary();
 
-        byte[] bytecode = generateBytecode(labelDict);
+        byte[] bytecode = generateBytecode(constantDict);
 
         output.write(bytecode);
 
         output.close();
     }
 
-    private byte[] generateBytecode(Map<String, NamedConstant> labelDict) throws AssemblerException {
+    private byte[] generateBytecode(Map<String, NamedConstant> constantDict) throws AssemblerException {
         ByteArrayOutputStream intermediate = new ByteArrayOutputStream();
 
         int orgOffset = 0;
 
         int curOffset = 0;
-
-        Map<String, NamedConstant> constants = new HashMap<>();
-
-        constants.putAll(labelDict);
 
         for (Statement stmt : statements) {
             switch (stmt.getType()) {
@@ -102,7 +99,7 @@ public class ProgramAssembler {
                     int size = 0;
 
                     if (instrStmt.getConstantFormula().isPresent()) {
-                        Pair<Integer, Integer> resolution = instrStmt.getConstantFormula().get().resolve(constants);
+                        Pair<Integer, Integer> resolution = instrStmt.getConstantFormula().get().resolve(constantDict);
                         operand = resolution.first();
                         size = resolution.second();
                     }
@@ -193,44 +190,14 @@ public class ProgramAssembler {
 
                             break;
                         default:
-                            throw new AssertionError("Unhandled case " + dirStmt.getDirective().name());
+                            //TODO: implement more cases
+                            //throw new AssertionError("Unhandled case " + dirStmt.getDirective().name());
                     }
 
                     break;
                 }
-                case NAMED_CONSTANT_DEF: {
-                    Statement.ConstantDefinitionStatement constDefStmt = (Statement.ConstantDefinitionStatement) stmt;
-
-                    String name = constDefStmt.getName();
-
-                    if (constants.containsKey(name)) {
-                        throw new AssemblerException(String.format("Constant %s defined multiple times.", name), stmt.getLine());
-                    }
-
-                    List<Integer> sizes = new ArrayList<>(constDefStmt.getConstantFormula().getSizes());
-
-                    for (Object v : constDefStmt.getConstantFormula().getValues()) {
-                        if (v instanceof String) {
-                            sizes.add(constants.get(v).getSize());
-                        }
-                    }
-
-                    int resolvedValue;
-                    int resolvedSize;
-                    try {
-                        Pair<Integer, Integer> resolved = constDefStmt.getConstantFormula().resolve(constants);
-                        resolvedValue = resolved.first();
-                        resolvedSize = resolved.second();
-                    } catch (AssemblerException ex) {
-                        throw new AssemblerException("Failed to resolve constant " + name + ".", ex, constDefStmt.getLine());
-                    }
-                    NamedConstant nc = new NamedConstant(name, resolvedValue, resolvedSize);
-
-                    constants.put(name, nc);
-
-                    break;
-                }
-                // skip label definitions since we already built a dictionary
+                // we already ingested all constant/label definitions
+                case NAMED_CONSTANT_DEF:
                 case LABEL_DEF:
                 case COMMENT:
                     continue;
@@ -243,65 +210,175 @@ public class ProgramAssembler {
     }
 
     // helper method for reading and indexing all label definitions
-    private Map<String, NamedConstant> buildLabelDictionary() throws AssemblerException {
-        Map<String, NamedConstant> constantDict = new HashMap<>();
-        List<String> definedLabels = new ArrayList<>();
+    private Map<String, NamedConstant> buildConstantDictionary() throws AssemblerException {
+        // We have to do four passes:
+        // First, we discover all defined labels so we can put them into a dictionary along with their size.
+        // Second, we compute the size of all constants based on the labels we discovered (+ previously defined constants).
+        // Third, we compute the actual offsets of labels based on the size dictionary we built.
+        // Fourth, we compute all constants based on the partial dictionary we built.
 
-        // first pass, for discovering which labels are defined (since they can be used ahead of their definition)
+        // first pass
+        List<String> discoveredLabels = discoverLabels();
+
+        // second pass
+        Map<String, Pair<Integer, ConstantFormula>> constantSizes = computeConstantSizes(discoveredLabels);
+
+        Map<String, Integer> mergedConstantSizes = new HashMap<>();
+        discoveredLabels.forEach(lbl -> mergedConstantSizes.put(lbl, 2));
+        constantSizes.forEach((name, pair) -> mergedConstantSizes.put(name, pair.first()));
+
+        // third pass
+        Map<String, NamedConstant> labelDefs = computeLabelOffsets(mergedConstantSizes);
+
+        // fourth pass
+        Map<String, NamedConstant> constantDefs = computeConstantDefs(
+                constantSizes.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().second())),
+                labelDefs
+        );
+
+        Map<String, NamedConstant> mergedConstantMap = new HashMap<>();
+        mergedConstantMap.putAll(labelDefs);
+        mergedConstantMap.putAll(constantDefs);
+
+        return mergedConstantMap;
+    }
+
+    private List<String> discoverLabels() throws AssemblerException {
+        List<String> labels = new ArrayList<>();
+
         for (Statement stmt : statements) {
-            if  (stmt.getType() == Statement.Type.LABEL_DEF) {
-                definedLabels.add(((Statement.LabelDefinitionStatement) stmt).getName());
+            try {
+                if (stmt.getType() == Statement.Type.LABEL_DEF) {
+                    // we don't care about the actual offset right now
+                    // all label references occupy 2 bytes
+                    labels.add(((Statement.LabelDefinitionStatement) stmt).getName());
+                }
+            } catch (Throwable t) {
+                throw new AssemblerException(t, stmt.getLine());
             }
         }
 
-        // construct a temporary combined label dictionary which includes all labels
-        Map<String, NamedConstant> combinedConstantDict = new HashMap<>(constantDict);
-        for (String label : definedLabels) {
-            // actual value doesn't matter, size is always 2 for label references
-            combinedConstantDict.put(label, new NamedConstant(label, 0, 2));
+        return labels;
+    }
+
+    private Map<String, Pair<Integer, ConstantFormula>> computeConstantSizes(List<String> labels) throws AssemblerException {
+        Map<String, Integer> sizes = new HashMap<>();
+        Map<String, ConstantFormula> forms = new HashMap<>();
+
+        for (Statement stmt : statements) {
+            if (stmt.getType() != Statement.Type.NAMED_CONSTANT_DEF) {
+                continue;
+            }
+
+            Statement.ConstantDefinitionStatement cdStmt = (Statement.ConstantDefinitionStatement) stmt;
+
+            ConstantFormula cf = ((Statement.ConstantDefinitionStatement) stmt).getConstantFormula();
+
+            forms.put(cdStmt.getName(), cdStmt.getConstantFormula());
+
+            int maxSize = 0;
+
+            for (int i = 0; i < cf.getValues().size(); i++) {
+                Integer size;
+
+                if (i < cf.getSizes().size() && cf.getSizes().get(i) != null) {
+                    size = cf.getSizes().get(i);
+                } else if (cf.getValues().get(i) instanceof String) {
+                    String ref = (String) cf.getValues().get(i);
+
+                    if (labels.contains(ref)) {
+                        // label refs are always two bytes
+                        size = 2;
+                    } else {
+                        size = sizes.get(ref);
+                    }
+
+                    if (size == null) {
+                        throw new AssemblerException("Reference to undefined constant " + ref, stmt.getLine());
+                    }
+
+                    if (i < cf.getMasks().size() && cf.getMasks().get(i) != null) {
+                        size = 1;
+                    }
+                } else {
+                    throw new AssertionError("Cannot get size for constant " + cdStmt.getName() + " (part " + (i + 1)
+                            + ") on line " + stmt.getLine());
+                }
+
+                assert size != null;
+
+                if (size > maxSize) {
+                    maxSize = size;
+                }
+            }
+            sizes.put(cdStmt.getName(), maxSize);
         }
 
-        int pc = 0;
+        return sizes.entrySet().stream()
+                    .collect(Collectors.toMap(Map.Entry::getKey, e -> Pair.of(e.getValue(), forms.get(e.getKey()))));
+    }
 
-        // second pass, for building the label dictionary
+    private Map<String, NamedConstant> computeLabelOffsets(Map<String, Integer> constantSizes) throws AssemblerException {
+        Map<String, NamedConstant> labelDict = new HashMap<>();
+
+        int pc = 0;
         for (Statement stmt : statements) {
             try {
-                switch (stmt.getType()) {
-                    case INSTRUCTION: {
-                        Statement.InstructionStatement instrStmt = (Statement.InstructionStatement) stmt;
+                if (stmt.getType() == Statement.Type.LABEL_DEF) {
+                    Statement.LabelDefinitionStatement lblStmt = (Statement.LabelDefinitionStatement) stmt;
 
-                        // just increment the program counter appropriately
-                        if (instrStmt.getAddressingMode().isPresent()) {
-                            pc += instrStmt.getAddressingMode().get().getLength();
-                        } else {
-                            checkState(instrStmt.getConstantFormula().isPresent());
+                    if (labelDict.containsKey(lblStmt.getName())) {
+                        throw new AssemblerException("Found duplicate label " + lblStmt.getName() + "!", lblStmt.getLine());
+                    }
 
-                            int size = instrStmt.getConstantFormula().get().resolve(combinedConstantDict).second();
+                    // we don't need to worry about the interim dict since
 
-                            pc += 1 + size;
+                    // add the label to the dictionary - no need to increment the PC
+                    labelDict.put(lblStmt.getName(), new NamedConstant(lblStmt.getName(), pc, 2));
+                } else if (stmt.getType() == Statement.Type.INSTRUCTION) {
+                    // we need to read instructions because they affect the PC
+                    Statement.InstructionStatement instrStmt = (Statement.InstructionStatement) stmt;
+
+                    // just increment the program counter appropriately
+                    if (instrStmt.getAddressingMode().isPresent()) {
+                        pc += instrStmt.getAddressingMode().get().getLength();
+                    } else {
+                        checkState(instrStmt.getConstantFormula().isPresent());
+
+                        ConstantFormula cf = instrStmt.getConstantFormula().get();
+
+                        int maxSize = 0;
+
+                        for (int i = 0; i < cf.getValues().size(); i++) {
+                            Integer size;
+
+                            if (i < cf.getSizes().size() && cf.getSizes().get(i) != null) {
+                                size = cf.getSizes().get(i);
+                            } else if (cf.getValues().get(i) instanceof String) {
+                                String ref = (String) cf.getValues().get(i);
+
+                                size = constantSizes.get(ref);
+
+                                if (size == null) {
+                                    throw new AssemblerException("Reference to undefined constant " + ref, stmt.getLine());
+                                }
+                            } else {
+                                throw new AssertionError("Cannot get size for operand (part " + (i + 1)
+                                        + ") on line " + stmt.getLine());
+                            }
+
+                            assert size != null;
+
+                            if (i < cf.getMasks().size() && cf.getMasks().get(i) != null) {
+                                size = 1;
+                            }
+
+                            if (size > maxSize) {
+                                maxSize = size;
+                            }
                         }
 
-                        break;
-                    }
-                    case LABEL_DEF: {
-                        Statement.LabelDefinitionStatement lblStmt = (Statement.LabelDefinitionStatement) stmt;
-
-                        if (constantDict.containsKey(lblStmt.getName())) {
-                            throw new AssemblerException("Found duplicate label " + lblStmt.getName() + "!", lblStmt.getLine());
-                        }
-
-                        // add the label to the dictionary - no need to increment the PC
-                        constantDict.put(lblStmt.getName(), new NamedConstant(lblStmt.getName(), pc, 2));
-
-                        break;
-                    }
-                    case NAMED_CONSTANT_DEF:
-                    case DIRECTIVE:
-                    case COMMENT: {
-                        continue;
-                    }
-                    default: {
-                        throw new AssertionError("Unhandled case " + stmt.getType().name());
+                        pc += 1 + maxSize;
                     }
                 }
             } catch (Throwable t) {
@@ -309,21 +386,41 @@ public class ProgramAssembler {
             }
         }
 
-        return constantDict;
+        return labelDict;
     }
 
-    private static int max(List<Integer> list) {
-        checkArgument(list.size() > 0, "List must not be empty.");
+    private Map<String, NamedConstant> computeConstantDefs(Map<String, ConstantFormula> formulas, Map<String, NamedConstant> labelDefs) throws AssemblerException {
+        Map<String, NamedConstant> constantMap = new HashMap<>(labelDefs);
 
-        int max = Integer.MIN_VALUE;
-
-        for (int v : list) {
-            if (v > max) {
-                max = v;
-            }
+        for (Map.Entry<String, ConstantFormula> e : formulas.entrySet()) {
+            Pair<Integer, Integer> res = e.getValue().resolve(constantMap);
+            NamedConstant nc = new NamedConstant(e.getKey(), res.first(), res.second());
+            constantMap.put(nc.getName(), nc);
         }
 
-        return max;
+        return constantMap;
     }
 
+    private NamedConstant computeConstant(Statement stmt, Map<String, NamedConstant> constantDict) throws AssemblerException {
+        Statement.ConstantDefinitionStatement constDefStmt = (Statement.ConstantDefinitionStatement) stmt;
+
+        String name = constDefStmt.getName();
+
+        if (constantDict.containsKey(name)) {
+            throw new AssemblerException(String.format("Constant %s defined multiple times.", name), stmt.getLine());
+        }
+
+        int resolvedValue;
+        int resolvedSize;
+        try {
+            Pair<Integer, Integer> resolved = constDefStmt.getConstantFormula().resolve(constantDict);
+            resolvedValue = resolved.first();
+            resolvedSize = resolved.second();
+        } catch (AssemblerException ex) {
+            throw new AssemblerException("Failed to resolve constant " + name + ".", ex, constDefStmt.getLine());
+        }
+        NamedConstant nc = new NamedConstant(name, resolvedValue, resolvedSize);
+
+        return nc;
+    }
 }

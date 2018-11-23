@@ -112,6 +112,7 @@ public class ConstantFormula {
                 size = sizes.get(i);
             } else if (val instanceof String) {
                 if (!constants.containsKey(val)) {
+                    System.out.println(constants);
                     throw new AssemblerException("Reference to undefined constant " + val + ".", line);
                 }
 
