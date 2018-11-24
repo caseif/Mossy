@@ -185,15 +185,22 @@ public class ProgramAssembler {
 
                     switch (dirStmt.getDirective()) {
                         case ORG:
-                            if (!dirStmt.getParam().isPresent()) {
-                                throw new AssemblerException("ORG directive requires a parameter.", dirStmt.getLine());
+                            if (dirStmt.getParams().size() != 1) {
+                                throw new AssemblerException("ORG directive requires exactly 1 parameter ("
+                                        + dirStmt.getParams().size() + " found).", dirStmt.getLine());
                             }
 
-                            if (!(dirStmt.getParam().get() instanceof Integer)) {
-                                throw new AssemblerException("ORG directive requires a number parameter.", dirStmt.getLine());
+                            Pair<Integer, Integer> res = dirStmt.getParams().get(0).resolve(constantDict);
+
+                            if (res.second() > 2) {
+                                throw new AssemblerException("Offset must not be longer than 2 bytes.", dirStmt.getLine());
                             }
 
-                            orgOffset = (int) dirStmt.getParam().get();
+                            orgOffset = res.first();
+
+                            break;
+                        case DB:
+                            //TODO
 
                             break;
                         default:

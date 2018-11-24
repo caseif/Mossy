@@ -28,12 +28,14 @@ package net.caseif.mossy.assembly.model;
 import static com.google.common.base.Preconditions.checkArgument;
 import static com.google.common.base.Preconditions.checkState;
 
+import com.google.common.collect.ImmutableList;
 import net.caseif.moslib.AddressingMode;
 import net.caseif.moslib.Mnemonic;
 import net.caseif.mossy.util.exception.AssemblerException;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -120,7 +122,7 @@ public abstract class Statement {
             } else {
                 // operand was supplied
 
-                constForm = new ConstantFormula(values, line);
+                constForm = ConstantFormula.fromStatementParams(values, line);
 
                 if (hasValue(values, ValueType.MODIFIER_IMM)) {
                     System.out.println("IMM!");
@@ -179,7 +181,7 @@ public abstract class Statement {
 
             this.name = getValue(values, ValueType.STRING_LITERAL);
 
-            this.constForm = new ConstantFormula(values, line);
+            this.constForm = ConstantFormula.fromStatementParams(values, line);
         }
 
         public String getName() {
@@ -195,7 +197,7 @@ public abstract class Statement {
     public class DirectiveStatement extends Statement {
 
         private final Directive type;
-        private final Object param;
+        private final List<ConstantFormula> params;
 
         DirectiveStatement(List<TypedValue> values, int line) {
             super(Type.DIRECTIVE, line);
@@ -204,25 +206,15 @@ public abstract class Statement {
 
             this.type = getValue(values, ValueType.DIRECTIVE);
 
-            if (values.size() > 1) {
-                if (hasValue(values, ValueType.NUMBER_LITERAL)) {
-                    param = getValue(values, ValueType.NUMBER_LITERAL);
-                } else if (hasValue(values, ValueType.STRING_LITERAL)) {
-                    param = getValue(values, ValueType.STRING_LITERAL);
-                } else {
-                    throw new AssertionError("Cannot find valid parameter for directive statement");
-                }
-            } else {
-                this.param = null;
-            }
+            this.params = new ArrayList<>();
         }
 
         public Directive getDirective() {
             return type;
         }
 
-        public Optional<Object> getParam() {
-            return Optional.ofNullable(param);
+        public List<ConstantFormula> getParams() {
+            return ImmutableList.copyOf(params);
         }
 
     }

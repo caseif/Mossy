@@ -39,45 +39,53 @@ public class ConstantFormula {
 
     private final int line;
 
-    private final ArrayList<Object> values;
-    private final ArrayList<Integer> sizes;
-    private final ArrayList<MaskType> masks;
-    private final ArrayList<OperatorType> operators;
+    private final List<Object> values;
+    private final List<Integer> sizes;
+    private final List<MaskType> masks;
+    private final List<OperatorType> operators;
 
-    ConstantFormula(List<TypedValue> values, int line) {
+    private ConstantFormula(List<Object> values, List<Integer> sizes, List<MaskType> masks, List<OperatorType> operators, int line) {
+        this.values = values;
+        this.sizes = sizes;
+        this.masks = masks;
+        this.operators = operators;
         this.line = line;
+    }
 
-        this.values = new ArrayList<>();
-        this.sizes = new ArrayList<>();
-        this.masks = new ArrayList<>();
-        this.operators = new ArrayList<>();
+    public static ConstantFormula fromStatementParams(List<TypedValue> paramList, int line) {
+        List<Object> values = new ArrayList<>();
+        List<Integer> sizes = new ArrayList<>();
+        List<MaskType> masks = new ArrayList<>();
+        List<OperatorType> operators = new ArrayList<>();
 
         int index = 0;
 
-        for (int i = 1; i < values.size(); i++) {
-            TypedValue v = values.get(i);
+        for (int i = 1; i < paramList.size(); i++) {
+            TypedValue v = paramList.get(i);
             switch (v.getType()) {
                 case MATH_OPERATOR:
-                    this.operators.add((OperatorType) v.getValue());
+                    operators.add((OperatorType) v.getValue());
                     index++;
                     break;
                 case OPERAND_SIZE:
-                    extend(this.sizes, index);
-                    this.sizes.add(index, (int) v.getValue());
+                    extend(sizes, index);
+                    sizes.add(index, (int) v.getValue());
                     break;
                 case NUMBER_LITERAL:
                 case STRING_LITERAL:
-                    extend(this.values, index);
-                    this.values.add(index, v.getValue());
+                    extend(values, index);
+                    values.add(index, v.getValue());
                     break;
                 case MASK:
-                    extend(this.masks, index);
-                    this.masks.add(index, (MaskType) v.getValue());
+                    extend(masks, index);
+                    masks.add(index, (MaskType) v.getValue());
                     break;
                 default:
                     break; // just skip
             }
         }
+
+        return new ConstantFormula(values, sizes, masks, operators, line);
     }
 
     public List<Object> getValues() {
