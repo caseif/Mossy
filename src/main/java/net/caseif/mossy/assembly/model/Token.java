@@ -30,6 +30,7 @@ import static net.caseif.mossy.assembly.model.ValueType.NUMBER_LITERAL;
 import static net.caseif.mossy.assembly.model.ValueType.MASK;
 import static net.caseif.mossy.assembly.model.ValueType.MATH_OPERATOR;
 import static net.caseif.mossy.assembly.model.ValueType.STRING_LITERAL;
+import static net.caseif.mossy.assembly.model.ValueType.VALUE_SEPARATOR;
 
 import net.caseif.moslib.Mnemonic;
 import net.caseif.mossy.util.OperatorType;
@@ -83,7 +84,7 @@ public class Token {
         BIN_DWORD(NUMBER_LITERAL, "%([01]{16})", PARSE_BIN),
         BIN_WORD(NUMBER_LITERAL, "%([01]{8})", PARSE_BIN),
         COLON(EMPTY, ":"),
-        COMMA(EMPTY, ","),
+        COMMA(VALUE_SEPARATOR, "(,)", s -> 0),
         EQUALS(EMPTY, "="),
         GREATER_THAN(MASK, "(>)", s -> MaskType.LOW),
         LESS_THAN(MASK, "(<)", s -> MaskType.HIGH),

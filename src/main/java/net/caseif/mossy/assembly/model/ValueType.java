@@ -37,6 +37,7 @@ public enum ValueType {
     DIRECTIVE,
     OPERAND_LIST_ELEMENT,
     MATH_OPERATOR,
-    MODIFIER_IMM
+    MODIFIER_IMM,
+    VALUE_SEPARATOR
 
 }

@@ -32,6 +32,7 @@ import net.caseif.moslib.AddressingMode;
 import net.caseif.moslib.Instruction;
 import net.caseif.moslib.Mnemonic;
 import net.caseif.mossy.assembly.model.ConstantFormula;
+import net.caseif.mossy.assembly.model.Directive;
 import net.caseif.mossy.assembly.model.NamedConstant;
 import net.caseif.mossy.assembly.model.Statement;
 import net.caseif.mossy.assembly.model.Token;
@@ -48,6 +49,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -184,25 +186,36 @@ public class ProgramAssembler {
                     Statement.DirectiveStatement dirStmt = (Statement.DirectiveStatement) stmt;
 
                     switch (dirStmt.getDirective()) {
-                        case ORG:
-                            if (dirStmt.getParams().size() != 1) {
-                                throw new AssemblerException("ORG directive requires exactly 1 parameter ("
-                                        + dirStmt.getParams().size() + " found).", dirStmt.getLine());
-                            }
-
-                            Pair<Integer, Integer> res = dirStmt.getParams().get(0).resolve(constantDict);
-
-                            if (res.second() > 2) {
-                                throw new AssemblerException("Offset must not be longer than 2 bytes.", dirStmt.getLine());
-                            }
-
-                            orgOffset = res.first();
+                        case ORG: {
+                            orgOffset = getOrgOffset(dirStmt);
 
                             break;
-                        case DB:
-                            //TODO
+                        }
+                        case DB: {
+                            for (ConstantFormula cf : dirStmt.getParams()) {
+                                // we don't care about the size since we always write one byte
+                                int val = cf.resolve(constantDict).first();
+
+                                intermediate.write(val & 0xff);
+
+                                curOffset += 1;
+                            }
 
                             break;
+                        }
+                        case DW: {
+                            for (ConstantFormula cf : dirStmt.getParams()) {
+                                // we don't care about the size since we always write two bytes
+                                int val = cf.resolve(constantDict).first();
+
+                                intermediate.write(val & 0xff);         // write low byte
+                                intermediate.write((val >> 8) & 0xff);  // write high byte
+
+                                curOffset += 2;
+                            }
+
+                            break;
+                        }
                         default:
                             //TODO: implement more cases
                             //throw new AssertionError("Unhandled case " + dirStmt.getDirective().name());
@@ -336,6 +349,7 @@ public class ProgramAssembler {
         Map<String, NamedConstant> labelDict = new HashMap<>();
 
         int pc = 0;
+        int orgOffset = 0;
         for (Statement stmt : statements) {
             try {
                 if (stmt.getType() == Statement.Type.LABEL_DEF) {
@@ -348,7 +362,7 @@ public class ProgramAssembler {
                     // we don't need to worry about the interim dict since
 
                     // add the label to the dictionary - no need to increment the PC
-                    labelDict.put(lblStmt.getName(), new NamedConstant(lblStmt.getName(), pc, 2));
+                    labelDict.put(lblStmt.getName(), new NamedConstant(lblStmt.getName(), orgOffset + pc, 2));
                 } else if (stmt.getType() == Statement.Type.INSTRUCTION) {
                     // we need to read instructions because they affect the PC
                     Statement.InstructionStatement instrStmt = (Statement.InstructionStatement) stmt;
@@ -394,6 +408,11 @@ public class ProgramAssembler {
 
                         pc += 1 + maxSize;
                     }
+                } else if (stmt.getType() == Statement.Type.DIRECTIVE) {
+                    Statement.DirectiveStatement dirStmt = (Statement.DirectiveStatement) stmt;
+                    if (dirStmt.getDirective() == Directive.ORG) {
+                        orgOffset = getOrgOffset(dirStmt);
+                    }
                 }
             } catch (Throwable t) {
                 throw new AssemblerException(t, stmt.getLine());
@@ -401,6 +420,30 @@ public class ProgramAssembler {
         }
 
         return labelDict;
+    }
+
+    private int getOrgOffset(Statement.DirectiveStatement stmt) throws AssemblerException {
+        int orgOffset;
+
+        if (stmt.getParams().size() != 1) {
+            throw new AssemblerException(".org directive must have exactly 1 operand (found "
+                    + stmt.getParams().size() + ").", stmt.getLine());
+        }
+
+        ConstantFormula cf = stmt.getParams().get(0);
+
+        if (cf.getValues().size() != 1) {
+            throw new AssemblerException(".org directive cannot contain arithmetic.", stmt.getLine());
+        }
+
+        Object val = cf.getValues().get(0);
+
+        if (!(val instanceof Integer)) {
+            throw new AssemblerException(".org directive operand must be numeric.", stmt.getLine());
+        }
+
+        orgOffset = (int) val;
+        return orgOffset;
     }
 
     private Map<String, NamedConstant> computeConstantDefs(Map<String, ConstantFormula> formulas, Map<String, NamedConstant> labelDefs) throws AssemblerException {

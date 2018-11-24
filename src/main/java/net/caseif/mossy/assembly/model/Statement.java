@@ -207,6 +207,18 @@ public abstract class Statement {
             this.type = getValue(values, ValueType.DIRECTIVE);
 
             this.params = new ArrayList<>();
+
+            int start = 0;
+            for (int i = start; i < values.size(); i++) {
+                if (values.get(i).getType() == ValueType.VALUE_SEPARATOR) {
+                    this.params.add(ConstantFormula.fromStatementParams(values.subList(start, i), line));
+                    start = i + 1;
+                }
+            }
+
+            if (values.size() - 1 - start > 0) {
+                this.params.add(ConstantFormula.fromStatementParams(values.subList(start, values.size()), line));
+            }
         }
 
         public Directive getDirective() {
