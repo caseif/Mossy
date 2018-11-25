@@ -339,7 +339,6 @@ public class ProgramAssembler {
         Map<String, NamedConstant> labelDict = new HashMap<>();
 
         int pc = 0;
-        int orgOffset = 0;
         for (Statement stmt : statements) {
             try {
                 if (stmt.getType() == Statement.Type.LABEL_DEF) {
@@ -349,63 +348,48 @@ public class ProgramAssembler {
                         throw new AssemblerException("Found duplicate label " + lblStmt.getName() + "!", lblStmt.getLine());
                     }
 
-                    // we don't need to worry about the interim dict since
+                    //System.out.println(lblStmt.getName() + ": " + Integer.toHexString(pc));
 
                     // add the label to the dictionary - no need to increment the PC
-                    labelDict.put(lblStmt.getName(), new NamedConstant(lblStmt.getName(), orgOffset + pc, 2));
+                    labelDict.put(lblStmt.getName(), new NamedConstant(lblStmt.getName(), pc, 2));
                 } else if (stmt.getType() == Statement.Type.INSTRUCTION) {
                     // we need to read instructions because they affect the PC
                     Statement.InstructionStatement instrStmt = (Statement.InstructionStatement) stmt;
 
+                    int operandLength = computeOperandSize(constantSizes, instrStmt);
+
                     // just increment the program counter appropriately
                     if (instrStmt.getAddressingMode().isPresent()) {
-                        pc += instrStmt.getAddressingMode().get().getLength();
-                    } else {
-                        checkState(instrStmt.getConstantFormula().isPresent());
+                        int operandLengthInBytecode = instrStmt.getAddressingMode().get().getLength();
 
-                        ConstantFormula cf = instrStmt.getConstantFormula().get();
-
-                        int maxSize = 0;
-
-                        for (int i = 0; i < cf.getValues().size(); i++) {
-                            Integer size;
-
-                            if (i < cf.getSizes().size() && cf.getSizes().get(i) != null) {
-                                size = cf.getSizes().get(i);
-                            } else if (cf.getValues().get(i) instanceof String) {
-                                String ref = (String) cf.getValues().get(i);
-
-                                size = constantSizes.get(ref);
-
-                                if (size == null) {
-                                    throw new AssemblerException("Reference to undefined constant " + ref, stmt.getLine());
+                        if (operandLength == 1) {
+                            if (instrStmt.getAddressingMode().get() == AddressingMode.ABX) {
+                                // verify the zero-paged variant actually exists
+                                if (Instruction.lookup(instrStmt.getMnemonic(), AddressingMode.ZPX).isPresent()) {
+                                    operandLengthInBytecode = 1;
                                 }
-                            } else {
-                                throw new AssertionError("Cannot get size for operand (part " + (i + 1)
-                                        + ") on line " + stmt.getLine());
-                            }
-
-                            assert size != null;
-
-                            if (i < cf.getMasks().size() && cf.getMasks().get(i) != null) {
-                                size = 1;
-                            }
-
-                            if (size > maxSize) {
-                                maxSize = size;
+                            } else if (instrStmt.getAddressingMode().get() == AddressingMode.ABY) {
+                                // verify the zero-paged variant actually exists
+                                if (Instruction.lookup(instrStmt.getMnemonic(), AddressingMode.ZPY).isPresent()) {
+                                    operandLengthInBytecode = 1;
+                                }
                             }
                         }
 
-                        pc += 1 + maxSize;
+                        pc += operandLengthInBytecode;
+                    } else {
+                        checkState(instrStmt.getConstantFormula().isPresent());
+
+                        pc += 1 + operandLength;
                     }
                 } else if (stmt.getType() == Statement.Type.DIRECTIVE) {
                     Statement.DirectiveStatement dirStmt = (Statement.DirectiveStatement) stmt;
                     if (dirStmt.getDirective() == Directive.ORG) {
-                        orgOffset = getOrgOffset(dirStmt);
+                        pc = getOrgOffset(dirStmt);
                     } else if (dirStmt.getDirective() == Directive.DB) {
-                        pc += 1;
+                        pc += dirStmt.getParams().size();
                     } else if (dirStmt.getDirective() == Directive.DW) {
-                        pc += 2;
+                        pc += dirStmt.getParams().size() * 2;
                     }
                 }
             } catch (Throwable t) {
@@ -414,6 +398,46 @@ public class ProgramAssembler {
         }
 
         return labelDict;
+    }
+
+    private int computeOperandSize(Map<String, Integer> constantSizes, Statement.InstructionStatement stmt) throws AssemblerException {
+        if (!stmt.getConstantFormula().isPresent()) {
+            return 0;
+        }
+
+        ConstantFormula cf = stmt.getConstantFormula().get();
+
+        int maxSize = 0;
+
+        for (int i = 0; i < cf.getValues().size(); i++) {
+            Integer size;
+
+            if (i < cf.getSizes().size() && cf.getSizes().get(i) != null) {
+                size = cf.getSizes().get(i);
+            } else if (cf.getValues().get(i) instanceof String) {
+                String ref = (String) cf.getValues().get(i);
+
+                size = constantSizes.get(ref);
+
+                if (size == null) {
+                    throw new AssemblerException("Reference to undefined constant " + ref, stmt.getLine());
+                }
+            } else {
+                throw new AssertionError("Cannot get size for operand (part " + (i + 1)
+                        + ") on line " + stmt.getLine());
+            }
+
+            assert size != null;
+
+            if (i < cf.getMasks().size() && cf.getMasks().get(i) != null) {
+                size = 1;
+            }
+
+            if (size > maxSize) {
+                maxSize = size;
+            }
+        }
+        return maxSize;
     }
 
     private int getOrgOffset(Statement.DirectiveStatement stmt) throws AssemblerException {
@@ -450,28 +474,5 @@ public class ProgramAssembler {
         }
 
         return constantMap;
-    }
-
-    private NamedConstant computeConstant(Statement stmt, Map<String, NamedConstant> constantDict) throws AssemblerException {
-        Statement.ConstantDefinitionStatement constDefStmt = (Statement.ConstantDefinitionStatement) stmt;
-
-        String name = constDefStmt.getName();
-
-        if (constantDict.containsKey(name)) {
-            throw new AssemblerException(String.format("Constant %s defined multiple times.", name), stmt.getLine());
-        }
-
-        int resolvedValue;
-        int resolvedSize;
-        try {
-            Pair<Integer, Integer> resolved = constDefStmt.getConstantFormula().resolve(constantDict);
-            resolvedValue = resolved.first();
-            resolvedSize = resolved.second();
-        } catch (AssemblerException ex) {
-            throw new AssemblerException("Failed to resolve constant " + name + ".", ex, constDefStmt.getLine());
-        }
-        NamedConstant nc = new NamedConstant(name, resolvedValue, resolvedSize);
-
-        return nc;
     }
 }
