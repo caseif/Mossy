@@ -21,7 +21,8 @@ If the last parameter is not provided, the output will be written to
 - Named constant support
 - Full arithmetic support
 - Masking support (`<` and `>`)
-- Some directive support (`.org`)
+- Some directive support (`.org`, `.db`, `.dw`)
+  - `.index` and `.mem` (as specified by x816) will parse, but are ignored
 
 #### Pending
 
