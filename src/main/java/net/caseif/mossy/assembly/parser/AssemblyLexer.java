@@ -25,6 +25,8 @@
 
 package net.caseif.mossy.assembly.parser;
 
+import static net.caseif.mossy.util.MiscHelper.debug;
+
 import net.caseif.mossy.assembly.model.Token;
 import net.caseif.mossy.util.exception.LexerException;
 import net.caseif.mossy.util.tuple.Pair;
@@ -62,7 +64,7 @@ public class AssemblyLexer {
                 continue;
             }
 
-            System.out.println("Matched token " + token.name());
+            debug("Matched token " + token.name());
 
             int len = m.group(0).length();
 

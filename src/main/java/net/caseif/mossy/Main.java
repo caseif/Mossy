@@ -25,6 +25,8 @@
 
 package net.caseif.mossy;
 
+import static net.caseif.mossy.util.MiscHelper.debug;
+
 import net.caseif.mossy.assembly.ProgramAssembler;
 import net.caseif.mossy.util.exception.InvalidAssemblyException;
 
@@ -40,6 +42,8 @@ import javax.annotation.Nullable;
 public class Main {
 
     private static final DirectoryStream.Filter<Path> ASM_FILTER = p -> p.getFileName().toString().endsWith(".asm");
+
+    public static final boolean DEBUG_PARSER = false;
 
     public static void main(String[] args) {
         Path inputPath = Paths.get(args[0]);
@@ -82,7 +86,7 @@ public class Main {
                 outputPath = inputPath.getParent().resolve(fileName + ".bin");
             }
 
-            System.out.println(outputPath);
+            debug("Writing output to " + outputPath);
 
             long start = System.nanoTime();
             assembler.assemble(Files.newOutputStream(outputPath));

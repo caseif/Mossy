@@ -60,11 +60,11 @@ public class ProgramAssembler {
     private List<Statement> statements;
 
     public void read(InputStream input) throws IOException, LexerException, ParserException {
-        System.out.println("Lexing assembly...");
+        System.out.println("Lexing source...");
 
         List<List<Token>> tokenized = AssemblyLexer.lex(input);
 
-        System.out.println("Parsing assembly...");
+        System.out.println("Parsing source...");
 
         statements = new ArrayList<>();
 
@@ -76,9 +76,15 @@ public class ProgramAssembler {
     public void assemble(OutputStream output) throws IOException, AssemblerException {
         checkState(statements != null, "No program loaded.");
 
+        System.out.println("Building constant dictionary...");
+
         Map<String, NamedConstant> constantDict = buildConstantDictionary();
 
+        System.out.println("Assembling parsed source to bytecode...");
+
         byte[] bytecode = generateBytecode(constantDict);
+
+        System.out.println("Writing bytecode output...");
 
         output.write(bytecode);
 
@@ -88,9 +94,7 @@ public class ProgramAssembler {
     private byte[] generateBytecode(Map<String, NamedConstant> constantDict) throws AssemblerException {
         ByteArrayOutputStream intermediate = new ByteArrayOutputStream();
 
-        int orgOffset = 0;
-
-        int curOffset = 0;
+        int pc = 0;
 
         for (Statement stmt : statements) {
             switch (stmt.getType()) {
@@ -132,7 +136,7 @@ public class ProgramAssembler {
                         // the offset is relative to the address following the current instruction
                         // since the addressing mode is always relative (1 byte operand), we can
                         // just add 2 to the current offset to move it past the operand.
-                        operand -= (curOffset + 2);
+                        operand -= (pc + 2);
                     }
 
                     if (addrMode.getLength() < size) {
@@ -151,7 +155,7 @@ public class ProgramAssembler {
 
                     intermediate.write((byte) instrOpt.get().getOpcode());
 
-                    curOffset += 1;
+                    pc += 1;
 
                     if (addrMode != AddressingMode.IMP) {
                         switch (addrMode.getLength() - 1) {
@@ -168,7 +172,7 @@ public class ProgramAssembler {
                                 throw new AssertionError("Unhandled case " + (addrMode.getLength() - 1));
                         }
 
-                        curOffset += addrMode.getLength() - 1;
+                        pc += addrMode.getLength() - 1;
                     }
 
                     break;
@@ -177,11 +181,6 @@ public class ProgramAssembler {
                     Statement.DirectiveStatement dirStmt = (Statement.DirectiveStatement) stmt;
 
                     switch (dirStmt.getDirective()) {
-                        case ORG: {
-                            orgOffset = getOrgOffset(dirStmt);
-
-                            break;
-                        }
                         case DB: {
                             for (ConstantFormula cf : dirStmt.getParams()) {
                                 // we don't care about the size since we always write one byte
@@ -189,7 +188,7 @@ public class ProgramAssembler {
 
                                 intermediate.write(val & 0xff);
 
-                                curOffset += 1;
+                                pc += 1;
                             }
 
                             break;
@@ -202,7 +201,7 @@ public class ProgramAssembler {
                                 intermediate.write(val & 0xff);         // write low byte
                                 intermediate.write((val >> 8) & 0xff);  // write high byte
 
-                                curOffset += 2;
+                                pc += 2;
                             }
 
                             break;

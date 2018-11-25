@@ -125,7 +125,6 @@ public abstract class Statement {
                 constForm = ConstantFormula.fromStatementParams(values, line);
 
                 if (hasValue(values, ValueType.MODIFIER_IMM)) {
-                    System.out.println("IMM!");
                     addrMode = AddressingMode.IMM;
                 } else if (mnemonic.getType() == Mnemonic.Type.BRANCH) {
                     // branch instructions always use relative addressing

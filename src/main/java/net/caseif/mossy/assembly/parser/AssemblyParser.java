@@ -53,6 +53,7 @@ import static net.caseif.mossy.assembly.model.ValueType.ADDR_MODE;
 import static net.caseif.mossy.assembly.model.ValueType.MODIFIER_IMM;
 import static net.caseif.mossy.assembly.model.ValueType.OPERAND_LIST_ELEMENT;
 import static net.caseif.mossy.assembly.model.ValueType.OPERAND_SIZE;
+import static net.caseif.mossy.util.MiscHelper.debug;
 
 import com.google.common.collect.ImmutableList;
 import net.caseif.moslib.AddressingMode;
@@ -193,10 +194,7 @@ public class AssemblyParser {
 
     // matches whatever statement can be found next
     private static Pair<Statement, Integer> matchNextStatement(List<Token> curTokens) throws ParserException {
-        System.out.println("next token: " + curTokens.get(0).getType());
-        if (curTokens.size() > 1) {
-            System.out.println("next next token: " + curTokens.get(1).getType());
-        }
+        debug("Next two tokens: " + curTokens.get(0).getType() + ", " + (curTokens.size() > 1 ? curTokens.get(1).getType() : "(EOL)"));
 
         for (Statement.Type goal : STATEMENT_SYNTAXES.keySet()) {
             // try to match against a specific goal
@@ -231,7 +229,7 @@ public class AssemblyParser {
     // matches a token list against a specific statement type AND pattern
     private static Optional<Pair<Statement, Integer>> matchStatementWithPattern(List<Token> curTokens,
                                                                                 Statement.Type goal, List<Expression.Type> pattern) {
-        System.out.println("Trying statement " + goal + " with pattern " + pattern);
+        debug("Trying statement " + goal + " with pattern " + pattern);
 
         // track the token count so we can return it to the caller
         int tokenCount = 0;
@@ -270,7 +268,7 @@ public class AssemblyParser {
             curTokens = curTokens.subList(res.get().second(), curTokens.size());
         }
 
-        System.out.println("Line " + line + ": Matched statement " + goal.name() + pattern + "(v:" + values + ")");
+        debug("Line " + line + ": Matched statement " + goal.name() + pattern + "(v:" + values + ")");
 
         return Optional.of(Pair.of(goal.constructStatement(line, values), tokenCount));
     }
@@ -289,9 +287,6 @@ public class AssemblyParser {
                 Optional<Pair<Expression, Integer>> res = matchExpressionWithPattern(curTokens, e.getKey(), pattern);
 
                 if (res.isPresent()) {
-                    if (goal == Expression.Type.ARITHMETIC_OPERATOR) {
-                        System.out.println("GOAL: " + res.get().first().getValues());
-                    }
                     return res;
                 }
             }
@@ -304,7 +299,7 @@ public class AssemblyParser {
 
     private static Optional<Pair<Expression, Integer>> matchExpressionWithPattern(List<Token> curTokens,
             Expression.TypeWithMetadata goal, List<ExpressionPart> pattern) {
-        System.out.println("  Trying expression " + goal.getType() + "(" + goal.getMetadata() + ") with pattern " + pattern);
+        debug("  Trying expression " + goal.getType() + "(" + goal.getMetadata() + ") with pattern " + pattern);
 
         // track the token count so we can return it to the caller
         int tokenCount = 0;
@@ -314,7 +309,7 @@ public class AssemblyParser {
         int line = -1;
 
         if (curTokens.size() < pattern.size()) {
-            System.out.println("Too small, failing");
+            debug("Too small, fast-failing");
 
             // not enough tokens to fulfill the pattern so just fail
             return Optional.empty();
@@ -323,7 +318,7 @@ public class AssemblyParser {
         for (ExpressionPart nextPart : pattern) {
             if (curTokens.size() == 0) {
                 // this is possible because we don't recurse into sub-expressions, which can contains multiple tokens
-                System.out.println("Exhausted token stack, failing");
+                debug("Exhausted token stack, failing");
 
                 return Optional.empty();
             }
@@ -331,11 +326,11 @@ public class AssemblyParser {
             if (nextPart instanceof Token.Type) {
                 // if the next token isn't what we expect, then the pattern fails
                 if (curTokens.get(0).getType() != nextPart) {
-                    System.out.println("    Failed on token " + curTokens.get(0).getType());
+                    debug("    Failed on token " + curTokens.get(0).getType());
                     return Optional.empty();
                 }
 
-                System.out.println("    Matched token " + nextPart + "(" + curTokens.get(0).getValue().orElse(null) + ")");
+                debug("    Matched token " + nextPart + "(" + curTokens.get(0).getValue().orElse(null) + ")");
 
                 // set the value, if applicable
                 if (curTokens.get(0).getType().getValueType() != ValueType.EMPTY) {
@@ -377,7 +372,7 @@ public class AssemblyParser {
             }
         }
 
-        System.out.println("    Line " + line + ": Matched expression " + goal.getType().name() + "(md:" + goal.getMetadata() + ")(v:" + values + ")");
+        debug("    Line " + line + ": Matched expression " + goal.getType().name() + "(md:" + goal.getMetadata() + ")(v:" + values + ")");
 
         return Optional.of(Pair.of(new Expression(Expression.TypeWithMetadata.of(goal.getType()), values, line), tokenCount));
     }

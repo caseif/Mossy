@@ -26,6 +26,7 @@
 package net.caseif.mossy.assembly.model;
 
 import static com.google.common.base.Preconditions.checkArgument;
+import static net.caseif.mossy.util.MiscHelper.debug;
 
 import net.caseif.mossy.util.OperatorType;
 import net.caseif.mossy.util.exception.AssemblerException;
@@ -120,7 +121,6 @@ public class ConstantFormula {
                 size = sizes.get(i);
             } else if (val instanceof String) {
                 if (!constants.containsKey(val)) {
-                    System.out.println(constants);
                     throw new AssemblerException("Reference to undefined constant " + val + ".", line);
                 }
 
@@ -146,11 +146,9 @@ public class ConstantFormula {
                 switch (operators.get(i - 1)) {
                     case ADD:
                         result += resolved;
-                        System.out.println("+ -> 0x" + Integer.toHexString(result));
                         break;
                     case SUBTRACT:
                         result -= resolved;
-                        System.out.println("- -> 0x" + Integer.toHexString(result));
                         break;
                     default:
                         throw new AssertionError("Unhandled case " + getOperators().get(i - 1));
@@ -169,7 +167,7 @@ public class ConstantFormula {
                     + " is too large (max value of " + maxVal + ").", line);
         }
 
-        System.out.println("result = " + result);
+        debug("Resolved constant to " + result);
 
         return Pair.of(result, maxSize);
     }
