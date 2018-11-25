@@ -76,6 +76,8 @@ public class Main {
         } else {
             ProgramAssembler assembler = new ProgramAssembler();
 
+            long start = System.nanoTime();
+
             try (InputStream input = Files.newInputStream(inputPath)) {
                 System.out.println("Starting assembly of file " + inputPath + ".");
                 assembler.read(input);
@@ -88,9 +90,10 @@ public class Main {
 
             debug("Writing output to " + outputPath);
 
-            long start = System.nanoTime();
             assembler.assemble(Files.newOutputStream(outputPath));
+
             long end = System.nanoTime();
+
             System.out.println("Assembled " + inputPath.toString() + " in " + (end - start) + " ns");
         }
     }
