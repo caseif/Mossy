@@ -154,15 +154,6 @@ public class ProgramAssembler {
                     curOffset += 1;
 
                     if (addrMode != AddressingMode.IMP) {
-                        // we only need to adjust the operand to account for the offset if
-                        // we're jumping to an absolute address. we should keep it intact
-                        // if we're using an indirect value.
-
-                        if (instrStmt.getMnemonic().getType() == Mnemonic.Type.JUMP
-                                && addrMode == AddressingMode.ABS) {
-                            operand += orgOffset;
-                        }
-
                         switch (addrMode.getLength() - 1) {
                             case 1:
                                 intermediate.write((byte) operand);
