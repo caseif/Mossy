@@ -1,6 +1,6 @@
 # Mossy
 
-An assembler for the 6502, written in Java. This project aims for feature parity with x816.
+An assembler for the 6502, written in Java. This project aims for compatibility with x816.
 
 ### How to Use
 
@@ -20,17 +20,26 @@ If the last parameter is not provided, the output will be written to
 - Label support
 - Named constant support
 - Full arithmetic support
-- Limited masking support (`<` and `>`)
-- Limited directive support (`.org`)
+- Masking support (`<` and `>`)
+- Some directive support (`.org`)
 
-### Pending
+#### Pending
 
-- Full masking support
-  - Currently cannot be used in constant definitions
-  - Currently cannot be used within arithmetic expressions
-- Full directive support
-  - Namely `.db`/`.dw`, `.include`, and `.macro`
+- More directive support
+  - `.include` support
+  - `.macro` support
   - Validation of `.index` and `.mem` directives
+- Tentatively: performance optimization (the parser is _super_ inefficient)
+
+### Why?
+
+Mossy was originally a rudimentary assembler built into
+[jNES](https://github.com/caseif/jNES) until I realized it was quickly growing
+out of the project's scope, at which point it was split into a separate,
+fully-featured project.
+
+As for why I choose to develop it, I just think this stuff is a lot of fun, and
+I want to gain more experience working with it.
 
 ### License
 
