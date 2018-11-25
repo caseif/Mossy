@@ -30,7 +30,6 @@ import static com.google.common.base.Preconditions.checkState;
 
 import net.caseif.moslib.AddressingMode;
 import net.caseif.moslib.Instruction;
-import net.caseif.moslib.Mnemonic;
 import net.caseif.mossy.assembly.model.ConstantFormula;
 import net.caseif.mossy.assembly.model.Directive;
 import net.caseif.mossy.assembly.model.NamedConstant;
@@ -49,7 +48,6 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -137,11 +135,12 @@ public class ProgramAssembler {
                         // since the addressing mode is always relative (1 byte operand), we can
                         // just add 2 to the current offset to move it past the operand.
                         operand -= (pc + 2);
+                        size = 1;
                     }
 
-                    if (addrMode.getLength() < size) {
+                    if (size > addrMode.getOperandLength()) {
                         throw new AssemblerException("Operand for addressing mode " + addrMode.name()
-                                + " must be at most " + addrMode.getLength() + " bytes.", instrStmt.getLine());
+                                + " must be at most " + addrMode.getOperandLength() + " bytes (actual: " + size + ").", instrStmt.getLine());
                     }
 
                     Optional<Instruction> instrOpt = Instruction.lookup(instrStmt.getMnemonic(), addrMode);
@@ -158,7 +157,7 @@ public class ProgramAssembler {
                     pc += 1;
 
                     if (addrMode != AddressingMode.IMP) {
-                        switch (addrMode.getLength() - 1) {
+                        switch (addrMode.getOperandLength()) {
                             case 1:
                                 intermediate.write((byte) operand);
 
@@ -169,10 +168,10 @@ public class ProgramAssembler {
 
                                 break;
                             default: // all 6502 addressing modes take either a word or a dword
-                                throw new AssertionError("Unhandled case " + (addrMode.getLength() - 1));
+                                throw new AssertionError("Unhandled case " + (addrMode.getOperandLength()));
                         }
 
-                        pc += addrMode.getLength() - 1;
+                        pc += addrMode.getOperandLength();
                     }
 
                     break;
@@ -248,7 +247,7 @@ public class ProgramAssembler {
         Map<String, NamedConstant> labelDefs = computeLabelOffsets(mergedConstantSizes);
 
         // fourth pass
-        Map<String, NamedConstant> constantDefs = computeConstantDefs(
+        Map<String, NamedConstant> constantDefs = computeConstantValues(
                 constantSizes.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().second())),
                 labelDefs
         );
@@ -360,7 +359,7 @@ public class ProgramAssembler {
 
                     // just increment the program counter appropriately
                     if (instrStmt.getAddressingMode().isPresent()) {
-                        int operandLengthInBytecode = instrStmt.getAddressingMode().get().getLength();
+                        int operandLengthInBytecode = instrStmt.getAddressingMode().get().getOperandLength();
 
                         if (operandLength == 1) {
                             if (instrStmt.getAddressingMode().get() == AddressingMode.ABX) {
@@ -376,12 +375,12 @@ public class ProgramAssembler {
                             }
                         }
 
-                        pc += operandLengthInBytecode;
+                        operandLength = operandLengthInBytecode;
                     } else {
                         checkState(instrStmt.getConstantFormula().isPresent());
-
-                        pc += 1 + operandLength;
                     }
+
+                    pc += 1 + operandLength;
                 } else if (stmt.getType() == Statement.Type.DIRECTIVE) {
                     Statement.DirectiveStatement dirStmt = (Statement.DirectiveStatement) stmt;
                     if (dirStmt.getDirective() == Directive.ORG) {
@@ -464,7 +463,7 @@ public class ProgramAssembler {
         return orgOffset;
     }
 
-    private Map<String, NamedConstant> computeConstantDefs(Map<String, ConstantFormula> formulas, Map<String, NamedConstant> labelDefs) throws AssemblerException {
+    private Map<String, NamedConstant> computeConstantValues(Map<String, ConstantFormula> formulas, Map<String, NamedConstant> labelDefs) throws AssemblerException {
         Map<String, NamedConstant> constantMap = new HashMap<>(labelDefs);
 
         for (Map.Entry<String, ConstantFormula> e : formulas.entrySet()) {

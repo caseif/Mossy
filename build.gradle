@@ -52,7 +52,7 @@ repositories {
 }
 
 dependencies {
-    shadow 'net.caseif.moslib:moslib:1.0.0'
+    shadow 'net.caseif.moslib:moslib:2.0.0'
 
     shadow 'com.google.guava:guava:26.0-jre'
 
