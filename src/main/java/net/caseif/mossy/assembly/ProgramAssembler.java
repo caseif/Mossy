@@ -412,6 +412,10 @@ public class ProgramAssembler {
                     Statement.DirectiveStatement dirStmt = (Statement.DirectiveStatement) stmt;
                     if (dirStmt.getDirective() == Directive.ORG) {
                         orgOffset = getOrgOffset(dirStmt);
+                    } else if (dirStmt.getDirective() == Directive.DB) {
+                        pc += 1;
+                    } else if (dirStmt.getDirective() == Directive.DW) {
+                        pc += 2;
                     }
                 }
             } catch (Throwable t) {
