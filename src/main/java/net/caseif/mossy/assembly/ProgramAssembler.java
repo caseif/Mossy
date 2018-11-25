@@ -92,7 +92,7 @@ public class ProgramAssembler {
     private byte[] generateBytecode(Map<String, NamedConstant> constantDict) throws AssemblerException {
         ByteArrayOutputStream intermediate = new ByteArrayOutputStream();
 
-        int pc = 0;
+        int fileOffset = 0;
 
         for (Statement stmt : statements) {
             switch (stmt.getType()) {
@@ -134,7 +134,7 @@ public class ProgramAssembler {
                         // the offset is relative to the address following the current instruction
                         // since the addressing mode is always relative (1 byte operand), we can
                         // just add 2 to the current offset to move it past the operand.
-                        operand -= (pc + 2);
+                        operand -= (fileOffset + 2);
                         size = 1;
                     }
 
@@ -154,7 +154,7 @@ public class ProgramAssembler {
 
                     intermediate.write((byte) instrOpt.get().getOpcode());
 
-                    pc += 1;
+                    fileOffset += 1;
 
                     if (addrMode != AddressingMode.IMP) {
                         switch (addrMode.getOperandLength()) {
@@ -171,7 +171,7 @@ public class ProgramAssembler {
                                 throw new AssertionError("Unhandled case " + (addrMode.getOperandLength()));
                         }
 
-                        pc += addrMode.getOperandLength();
+                        fileOffset += addrMode.getOperandLength();
                     }
 
                     break;
@@ -187,7 +187,7 @@ public class ProgramAssembler {
 
                                 intermediate.write(val & 0xff);
 
-                                pc += 1;
+                                fileOffset += 1;
                             }
 
                             break;
@@ -200,7 +200,26 @@ public class ProgramAssembler {
                                 intermediate.write(val & 0xff);         // write low byte
                                 intermediate.write((val >> 8) & 0xff);  // write high byte
 
-                                pc += 2;
+                                fileOffset += 2;
+                            }
+
+                            break;
+                        }
+                        case ORG: {
+                            if (fileOffset > 0) {
+                                int newOffset = dirStmt.getParams().get(0).resolve(constantDict).first();
+
+                                if (newOffset < fileOffset) {
+                                    throw new AssemblerException(".org offset must be greater than or equal to current offset", dirStmt.getLine());
+                                }
+
+                                byte[] filler = new byte[newOffset - fileOffset];
+
+                                try {
+                                    intermediate.write(filler);
+                                } catch (IOException ex) {
+                                    throw new RuntimeException("Failed to write " + filler.length + "filler bytes", ex);
+                                }
                             }
 
                             break;
