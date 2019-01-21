@@ -206,9 +206,9 @@ public class ProgramAssembler {
                             break;
                         }
                         case ORG: {
-                            if (fileOffset > 0) {
-                                int newOffset = dirStmt.getParams().get(0).resolve(constantDict).first();
+                            int newOffset = dirStmt.getParams().get(0).resolve(constantDict).first();
 
+                            if (fileOffset > 0) {
                                 if (newOffset < fileOffset) {
                                     throw new AssemblerException(".org offset must be greater than or equal to current offset", dirStmt.getLine());
                                 }
@@ -221,6 +221,8 @@ public class ProgramAssembler {
                                     throw new RuntimeException("Failed to write " + filler.length + "filler bytes", ex);
                                 }
                             }
+
+                            fileOffset = newOffset;
 
                             break;
                         }
