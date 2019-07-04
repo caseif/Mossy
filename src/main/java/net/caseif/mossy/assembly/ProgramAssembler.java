@@ -30,6 +30,7 @@ import static com.google.common.base.Preconditions.checkState;
 
 import net.caseif.moslib.AddressingMode;
 import net.caseif.moslib.Instruction;
+import net.caseif.moslib.Mnemonic;
 import net.caseif.mossy.assembly.model.ConstantFormula;
 import net.caseif.mossy.assembly.model.Directive;
 import net.caseif.mossy.assembly.model.NamedConstant;
@@ -155,6 +156,11 @@ public class ProgramAssembler {
                     intermediate.write((byte) instrOpt.get().getOpcode());
 
                     fileOffset += 1;
+
+                    if (instrStmt.getMnemonic() == Mnemonic.BRK) {
+                        intermediate.write(0); // padding since BRK increments PC by 2
+                        fileOffset++;
+                    }
 
                     if (addrMode != AddressingMode.IMP) {
                         switch (addrMode.getOperandLength()) {
