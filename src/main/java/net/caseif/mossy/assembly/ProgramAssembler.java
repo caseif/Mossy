@@ -388,6 +388,10 @@ public class ProgramAssembler {
                     if (instrStmt.getAddressingMode().isPresent()) {
                         int operandLengthInBytecode = instrStmt.getAddressingMode().get().getOperandLength();
 
+                        if (instrStmt.getMnemonic() == Mnemonic.BRK) {
+                            operandLengthInBytecode = 1;
+                        }
+
                         if (operandLength == 1) {
                             if (instrStmt.getAddressingMode().get() == AddressingMode.ABX) {
                                 // verify the zero-paged variant actually exists
@@ -429,6 +433,10 @@ public class ProgramAssembler {
     private int computeOperandSize(Map<String, Integer> constantSizes, Statement.InstructionStatement stmt) throws AssemblerException {
         if (!stmt.getConstantFormula().isPresent()) {
             return 0;
+        }
+
+        if (stmt.getMnemonic() == Mnemonic.BRK) {
+            return 1;
         }
 
         ConstantFormula cf = stmt.getConstantFormula().get();
