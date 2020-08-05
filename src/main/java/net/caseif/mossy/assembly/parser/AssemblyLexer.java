@@ -43,7 +43,7 @@ import java.util.regex.Pattern;
 
 public class AssemblyLexer {
 
-    private static final Pattern RE_WHITESPACE      = Pattern.compile("^\\s+");
+    private static final Pattern RE_WHITESPACE = Pattern.compile("^\\s+");
 
     public static Optional<Pair<Token, Integer>> nextToken(String line, int pos, int lineNum) {
         int skipped = 0;

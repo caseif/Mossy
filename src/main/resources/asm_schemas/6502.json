@@ -1,0 +1,1424 @@
+{
+    "mnemonics": [
+        "LDA",
+        "LDX",
+        "LDY",
+        "STA",
+        "STX",
+        "STY",
+        "TAX",
+        "TAY",
+        "TSX",
+        "TXA",
+        "TYA",
+        "TXS",
+        "ADC",
+        "SBC",
+        "DEC",
+        "DEX",
+        "DEY",
+        "INC",
+        "INX",
+        "INY",
+        "AND",
+        "ASL",
+        "LSR",
+        "BIT",
+        "EOR",
+        "ORA",
+        "ROL",
+        "ROR",
+        "BCC",
+        "BCS",
+        "BNE",
+        "BEQ",
+        "BPL",
+        "BMI",
+        "BVC",
+        "BVS",
+        "JMP",
+        "JSR",
+        "RTI",
+        "RTS",
+        "CLC",
+        "CLD",
+        "CLI",
+        "CLV",
+        "CMP",
+        "CPX",
+        "CPY",
+        "SEC",
+        "SED",
+        "SEI",
+        "PHA",
+        "PHP",
+        "PLA",
+        "PLP",
+        "BRK",
+        "NOP",
+        "KIL",
+        "ANC",
+        "SLO",
+        "RLA",
+        "SRE",
+        "RRA",
+        "SAX",
+        "LAX",
+        "DCP",
+        "ALR",
+        "XAA",
+        "TAS",
+        "SHY",
+        "SHX",
+        "AHX",
+        "ARR",
+        "LAS",
+        "ISC",
+        "AXS"
+    ],
+    "address_modes": [
+        {
+            "id": "IMM",
+            "label": "Immediate",
+            "operand_len": 1
+        },
+        {
+            "id": "ZRP",
+            "label": "Zero-page",
+            "operand_len": 1
+        },
+        {
+            "id": "ZPX",
+            "label": "Zero-page X",
+            "operand_len": 1
+        },
+        {
+            "id": "ZPY",
+            "label": "Zero-page Y",
+            "operand_len": 1
+        },
+        {
+            "id": "ABS",
+            "label": "Absolute",
+            "operand_len": 2
+        },
+        {
+            "id": "ABX",
+            "label": "Absolute X",
+            "operand_len": 2
+        },
+        {
+            "id": "ABY",
+            "label": "Absolute Y",
+            "operand_len": 2
+        },
+        {
+            "id": "IND",
+            "label": "Indirect",
+            "operand_len": 2
+        },
+        {
+            "id": "IZX",
+            "label": "Indexed indirect",
+            "operand_len": 1
+        },
+        {
+            "id": "IZY",
+            "label": "Indirect indexed",
+            "operand_len": 1
+        },
+        {
+            "id": "REL",
+            "label": "Relative",
+            "operand_len": 1,
+            "relative": true
+        },
+        {
+            "id": "IMP",
+            "label": "Implied",
+            "operand_len": 0
+        }
+    ],
+    "instruction_set": [
+        {
+            "mnemonic": "BRK",
+            "address_mode": "IMP",
+            "opcode": "00"
+        },
+        {
+            "mnemonic": "ORA",
+            "address_mode": "IZX",
+            "opcode": "01"
+        },
+        {
+            "mnemonic": "KIL",
+            "address_mode": "IMP",
+            "opcode": "02"
+        },
+        {
+            "mnemonic": "SLO",
+            "address_mode": "IZX",
+            "opcode": "03"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "ZRP",
+            "opcode": "04"
+        },
+        {
+            "mnemonic": "ORA",
+            "address_mode": "ZRP",
+            "opcode": "05"
+        },
+        {
+            "mnemonic": "ASL",
+            "address_mode": "ZRP",
+            "opcode": "06"
+        },
+        {
+            "mnemonic": "SLO",
+            "address_mode": "ZRP",
+            "opcode": "07"
+        },
+        {
+            "mnemonic": "PHP",
+            "address_mode": "IMP",
+            "opcode": "08"
+        },
+        {
+            "mnemonic": "ORA",
+            "address_mode": "IMM",
+            "opcode": "09"
+        },
+        {
+            "mnemonic": "ASL",
+            "address_mode": "IMP",
+            "opcode": "0A"
+        },
+        {
+            "mnemonic": "ANC",
+            "address_mode": "IMM",
+            "opcode": "0B"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "ABS",
+            "opcode": "0C"
+        },
+        {
+            "mnemonic": "ORA",
+            "address_mode": "ABS",
+            "opcode": "0D"
+        },
+        {
+            "mnemonic": "ASL",
+            "address_mode": "ABS",
+            "opcode": "0E"
+        },
+        {
+            "mnemonic": "SLO",
+            "address_mode": "ABS",
+            "opcode": "0F"
+        },
+        {
+            "mnemonic": "BPL",
+            "address_mode": "REL",
+            "opcode": "10"
+        },
+        {
+            "mnemonic": "ORA",
+            "address_mode": "IZY",
+            "opcode": "11"
+        },
+        {
+            "mnemonic": "KIL",
+            "address_mode": "IMP",
+            "opcode": "12"
+        },
+        {
+            "mnemonic": "SLO",
+            "address_mode": "IZY",
+            "opcode": "13"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "ZPX",
+            "opcode": "14"
+        },
+        {
+            "mnemonic": "ORA",
+            "address_mode": "ZPX",
+            "opcode": "15"
+        },
+        {
+            "mnemonic": "ASL",
+            "address_mode": "ZPX",
+            "opcode": "16"
+        },
+        {
+            "mnemonic": "SLO",
+            "address_mode": "ZPX",
+            "opcode": "17"
+        },
+        {
+            "mnemonic": "CLC",
+            "address_mode": "IMP",
+            "opcode": "18"
+        },
+        {
+            "mnemonic": "ORA",
+            "address_mode": "ABY",
+            "opcode": "19"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "IMP",
+            "opcode": "1A"
+        },
+        {
+            "mnemonic": "SLO",
+            "address_mode": "ABY",
+            "opcode": "1B"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "ABX",
+            "opcode": "1C"
+        },
+        {
+            "mnemonic": "ORA",
+            "address_mode": "ABX",
+            "opcode": "1D"
+        },
+        {
+            "mnemonic": "ASL",
+            "address_mode": "ABX",
+            "opcode": "1E"
+        },
+        {
+            "mnemonic": "SLO",
+            "address_mode": "ABX",
+            "opcode": "1F"
+        },
+        {
+            "mnemonic": "JSR",
+            "address_mode": "ABS",
+            "opcode": "20"
+        },
+        {
+            "mnemonic": "AND",
+            "address_mode": "IZX",
+            "opcode": "21"
+        },
+        {
+            "mnemonic": "KIL",
+            "address_mode": "IMP",
+            "opcode": "22"
+        },
+        {
+            "mnemonic": "RLA",
+            "address_mode": "IZX",
+            "opcode": "23"
+        },
+        {
+            "mnemonic": "BIT",
+            "address_mode": "ZRP",
+            "opcode": "24"
+        },
+        {
+            "mnemonic": "AND",
+            "address_mode": "ZRP",
+            "opcode": "25"
+        },
+        {
+            "mnemonic": "ROL",
+            "address_mode": "ZRP",
+            "opcode": "26"
+        },
+        {
+            "mnemonic": "RLA",
+            "address_mode": "ZRP",
+            "opcode": "27"
+        },
+        {
+            "mnemonic": "PLP",
+            "address_mode": "IMP",
+            "opcode": "28"
+        },
+        {
+            "mnemonic": "AND",
+            "address_mode": "IMM",
+            "opcode": "29"
+        },
+        {
+            "mnemonic": "ROL",
+            "address_mode": "IMP",
+            "opcode": "2A"
+        },
+        {
+            "mnemonic": "ANC",
+            "address_mode": "IMM",
+            "opcode": "2B"
+        },
+        {
+            "mnemonic": "BIT",
+            "address_mode": "ABS",
+            "opcode": "2C"
+        },
+        {
+            "mnemonic": "AND",
+            "address_mode": "ABS",
+            "opcode": "2D"
+        },
+        {
+            "mnemonic": "ROL",
+            "address_mode": "ABS",
+            "opcode": "2E"
+        },
+        {
+            "mnemonic": "RLA",
+            "address_mode": "ABS",
+            "opcode": "2F"
+        },
+        {
+            "mnemonic": "BMI",
+            "address_mode": "REL",
+            "opcode": "30"
+        },
+        {
+            "mnemonic": "AND",
+            "address_mode": "IZY",
+            "opcode": "31"
+        },
+        {
+            "mnemonic": "KIL",
+            "address_mode": "IMP",
+            "opcode": "32"
+        },
+        {
+            "mnemonic": "RLA",
+            "address_mode": "IZY",
+            "opcode": "33"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "ZPX",
+            "opcode": "34"
+        },
+        {
+            "mnemonic": "AND",
+            "address_mode": "ZPX",
+            "opcode": "35"
+        },
+        {
+            "mnemonic": "ROL",
+            "address_mode": "ZPX",
+            "opcode": "36"
+        },
+        {
+            "mnemonic": "RLA",
+            "address_mode": "ZPX",
+            "opcode": "37"
+        },
+        {
+            "mnemonic": "SEC",
+            "address_mode": "IMP",
+            "opcode": "38"
+        },
+        {
+            "mnemonic": "AND",
+            "address_mode": "ABY",
+            "opcode": "39"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "IMP",
+            "opcode": "3A"
+        },
+        {
+            "mnemonic": "RLA",
+            "address_mode": "ABY",
+            "opcode": "3B"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "ABX",
+            "opcode": "3C"
+        },
+        {
+            "mnemonic": "AND",
+            "address_mode": "ABX",
+            "opcode": "3D"
+        },
+        {
+            "mnemonic": "ROL",
+            "address_mode": "ABX",
+            "opcode": "3E"
+        },
+        {
+            "mnemonic": "RLA",
+            "address_mode": "ABX",
+            "opcode": "3F"
+        },
+        {
+            "mnemonic": "RTI",
+            "address_mode": "IMP",
+            "opcode": "40"
+        },
+        {
+            "mnemonic": "EOR",
+            "address_mode": "IZX",
+            "opcode": "41"
+        },
+        {
+            "mnemonic": "KIL",
+            "address_mode": "IMP",
+            "opcode": "42"
+        },
+        {
+            "mnemonic": "SRE",
+            "address_mode": "IZX",
+            "opcode": "43"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "ZRP",
+            "opcode": "44"
+        },
+        {
+            "mnemonic": "EOR",
+            "address_mode": "ZRP",
+            "opcode": "45"
+        },
+        {
+            "mnemonic": "LSR",
+            "address_mode": "ZRP",
+            "opcode": "46"
+        },
+        {
+            "mnemonic": "SRE",
+            "address_mode": "ZRP",
+            "opcode": "47"
+        },
+        {
+            "mnemonic": "PHA",
+            "address_mode": "IMP",
+            "opcode": "48"
+        },
+        {
+            "mnemonic": "EOR",
+            "address_mode": "IMM",
+            "opcode": "49"
+        },
+        {
+            "mnemonic": "LSR",
+            "address_mode": "IMP",
+            "opcode": "4A"
+        },
+        {
+            "mnemonic": "ALR",
+            "address_mode": "IMM",
+            "opcode": "4B"
+        },
+        {
+            "mnemonic": "JMP",
+            "address_mode": "ABS",
+            "opcode": "4C"
+        },
+        {
+            "mnemonic": "EOR",
+            "address_mode": "ABS",
+            "opcode": "4D"
+        },
+        {
+            "mnemonic": "LSR",
+            "address_mode": "ABS",
+            "opcode": "4E"
+        },
+        {
+            "mnemonic": "SRE",
+            "address_mode": "ABS",
+            "opcode": "4F"
+        },
+        {
+            "mnemonic": "BVC",
+            "address_mode": "REL",
+            "opcode": "50"
+        },
+        {
+            "mnemonic": "EOR",
+            "address_mode": "IZY",
+            "opcode": "51"
+        },
+        {
+            "mnemonic": "KIL",
+            "address_mode": "IMP",
+            "opcode": "52"
+        },
+        {
+            "mnemonic": "SRE",
+            "address_mode": "IZY",
+            "opcode": "53"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "ZPX",
+            "opcode": "54"
+        },
+        {
+            "mnemonic": "EOR",
+            "address_mode": "ZPX",
+            "opcode": "55"
+        },
+        {
+            "mnemonic": "LSR",
+            "address_mode": "ZPX",
+            "opcode": "56"
+        },
+        {
+            "mnemonic": "SRE",
+            "address_mode": "ZPX",
+            "opcode": "57"
+        },
+        {
+            "mnemonic": "CLI",
+            "address_mode": "IMP",
+            "opcode": "58"
+        },
+        {
+            "mnemonic": "EOR",
+            "address_mode": "ABY",
+            "opcode": "59"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "IMP",
+            "opcode": "5A"
+        },
+        {
+            "mnemonic": "SRE",
+            "address_mode": "ABY",
+            "opcode": "5B"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "ABX",
+            "opcode": "5C"
+        },
+        {
+            "mnemonic": "EOR",
+            "address_mode": "ABX",
+            "opcode": "5D"
+        },
+        {
+            "mnemonic": "LSR",
+            "address_mode": "ABX",
+            "opcode": "5E"
+        },
+        {
+            "mnemonic": "SRE",
+            "address_mode": "ABX",
+            "opcode": "5F"
+        },
+        {
+            "mnemonic": "RTS",
+            "address_mode": "IMP",
+            "opcode": "60"
+        },
+        {
+            "mnemonic": "ADC",
+            "address_mode": "IZX",
+            "opcode": "61"
+        },
+        {
+            "mnemonic": "KIL",
+            "address_mode": "IMP",
+            "opcode": "62"
+        },
+        {
+            "mnemonic": "RRA",
+            "address_mode": "IZX",
+            "opcode": "63"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "ZRP",
+            "opcode": "64"
+        },
+        {
+            "mnemonic": "ADC",
+            "address_mode": "ZRP",
+            "opcode": "65"
+        },
+        {
+            "mnemonic": "ROR",
+            "address_mode": "ZRP",
+            "opcode": "66"
+        },
+        {
+            "mnemonic": "RRA",
+            "address_mode": "ZRP",
+            "opcode": "67"
+        },
+        {
+            "mnemonic": "PLA",
+            "address_mode": "IMP",
+            "opcode": "68"
+        },
+        {
+            "mnemonic": "ADC",
+            "address_mode": "IMM",
+            "opcode": "69"
+        },
+        {
+            "mnemonic": "ROR",
+            "address_mode": "IMP",
+            "opcode": "6A"
+        },
+        {
+            "mnemonic": "ARR",
+            "address_mode": "IMM",
+            "opcode": "6B"
+        },
+        {
+            "mnemonic": "JMP",
+            "address_mode": "IND",
+            "opcode": "6C"
+        },
+        {
+            "mnemonic": "ADC",
+            "address_mode": "ABS",
+            "opcode": "6D"
+        },
+        {
+            "mnemonic": "ROR",
+            "address_mode": "ABS",
+            "opcode": "6E"
+        },
+        {
+            "mnemonic": "RRA",
+            "address_mode": "ABS",
+            "opcode": "6F"
+        },
+        {
+            "mnemonic": "BVS",
+            "address_mode": "REL",
+            "opcode": "70"
+        },
+        {
+            "mnemonic": "ADC",
+            "address_mode": "IZY",
+            "opcode": "71"
+        },
+        {
+            "mnemonic": "KIL",
+            "address_mode": "IMP",
+            "opcode": "72"
+        },
+        {
+            "mnemonic": "RRA",
+            "address_mode": "IZY",
+            "opcode": "73"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "ZPX",
+            "opcode": "74"
+        },
+        {
+            "mnemonic": "ADC",
+            "address_mode": "ZPX",
+            "opcode": "75"
+        },
+        {
+            "mnemonic": "ROR",
+            "address_mode": "ZPX",
+            "opcode": "76"
+        },
+        {
+            "mnemonic": "RRA",
+            "address_mode": "ZPX",
+            "opcode": "77"
+        },
+        {
+            "mnemonic": "SEI",
+            "address_mode": "IMP",
+            "opcode": "78"
+        },
+        {
+            "mnemonic": "ADC",
+            "address_mode": "ABY",
+            "opcode": "79"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "IMP",
+            "opcode": "7A"
+        },
+        {
+            "mnemonic": "RRA",
+            "address_mode": "ABY",
+            "opcode": "7B"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "ABX",
+            "opcode": "7C"
+        },
+        {
+            "mnemonic": "ADC",
+            "address_mode": "ABX",
+            "opcode": "7D"
+        },
+        {
+            "mnemonic": "ROR",
+            "address_mode": "ABX",
+            "opcode": "7E"
+        },
+        {
+            "mnemonic": "RRA",
+            "address_mode": "ABX",
+            "opcode": "7F"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "IMM",
+            "opcode": "80"
+        },
+        {
+            "mnemonic": "STA",
+            "address_mode": "IZX",
+            "opcode": "81"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "IMM",
+            "opcode": "82"
+        },
+        {
+            "mnemonic": "SAX",
+            "address_mode": "IZX",
+            "opcode": "83"
+        },
+        {
+            "mnemonic": "STY",
+            "address_mode": "ZRP",
+            "opcode": "84"
+        },
+        {
+            "mnemonic": "STA",
+            "address_mode": "ZRP",
+            "opcode": "85"
+        },
+        {
+            "mnemonic": "STX",
+            "address_mode": "ZRP",
+            "opcode": "86"
+        },
+        {
+            "mnemonic": "SAX",
+            "address_mode": "ZRP",
+            "opcode": "87"
+        },
+        {
+            "mnemonic": "DEY",
+            "address_mode": "IMP",
+            "opcode": "88"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "IMM",
+            "opcode": "89"
+        },
+        {
+            "mnemonic": "TXA",
+            "address_mode": "IMP",
+            "opcode": "8A"
+        },
+        {
+            "mnemonic": "XAA",
+            "address_mode": "IMM",
+            "opcode": "8B"
+        },
+        {
+            "mnemonic": "STY",
+            "address_mode": "ABS",
+            "opcode": "8C"
+        },
+        {
+            "mnemonic": "STA",
+            "address_mode": "ABS",
+            "opcode": "8D"
+        },
+        {
+            "mnemonic": "STX",
+            "address_mode": "ABS",
+            "opcode": "8E"
+        },
+        {
+            "mnemonic": "SAX",
+            "address_mode": "ABS",
+            "opcode": "8F"
+        },
+        {
+            "mnemonic": "BCC",
+            "address_mode": "REL",
+            "opcode": "90"
+        },
+        {
+            "mnemonic": "STA",
+            "address_mode": "IZY",
+            "opcode": "91"
+        },
+        {
+            "mnemonic": "KIL",
+            "address_mode": "IMP",
+            "opcode": "92"
+        },
+        {
+            "mnemonic": "AHX",
+            "address_mode": "IZY",
+            "opcode": "93"
+        },
+        {
+            "mnemonic": "STY",
+            "address_mode": "ZPX",
+            "opcode": "94"
+        },
+        {
+            "mnemonic": "STA",
+            "address_mode": "ZPX",
+            "opcode": "95"
+        },
+        {
+            "mnemonic": "STX",
+            "address_mode": "ZPY",
+            "opcode": "96"
+        },
+        {
+            "mnemonic": "SAX",
+            "address_mode": "ZPY",
+            "opcode": "97"
+        },
+        {
+            "mnemonic": "TYA",
+            "address_mode": "IMP",
+            "opcode": "98"
+        },
+        {
+            "mnemonic": "STA",
+            "address_mode": "ABY",
+            "opcode": "99"
+        },
+        {
+            "mnemonic": "TXS",
+            "address_mode": "IMP",
+            "opcode": "9A"
+        },
+        {
+            "mnemonic": "TAS",
+            "address_mode": "ABY",
+            "opcode": "9B"
+        },
+        {
+            "mnemonic": "SHY",
+            "address_mode": "ABX",
+            "opcode": "9C"
+        },
+        {
+            "mnemonic": "STA",
+            "address_mode": "ABX",
+            "opcode": "9D"
+        },
+        {
+            "mnemonic": "SHX",
+            "address_mode": "ABY",
+            "opcode": "9E"
+        },
+        {
+            "mnemonic": "AHX",
+            "address_mode": "ABY",
+            "opcode": "9F"
+        },
+        {
+            "mnemonic": "LDY",
+            "address_mode": "IMM",
+            "opcode": "A0"
+        },
+        {
+            "mnemonic": "LDA",
+            "address_mode": "IZX",
+            "opcode": "A1"
+        },
+        {
+            "mnemonic": "LDX",
+            "address_mode": "IMM",
+            "opcode": "A2"
+        },
+        {
+            "mnemonic": "LAX",
+            "address_mode": "IZX",
+            "opcode": "A3"
+        },
+        {
+            "mnemonic": "LDY",
+            "address_mode": "ZRP",
+            "opcode": "A4"
+        },
+        {
+            "mnemonic": "LDA",
+            "address_mode": "ZRP",
+            "opcode": "A5"
+        },
+        {
+            "mnemonic": "LDX",
+            "address_mode": "ZRP",
+            "opcode": "A6"
+        },
+        {
+            "mnemonic": "LAX",
+            "address_mode": "ZRP",
+            "opcode": "A7"
+        },
+        {
+            "mnemonic": "TAY",
+            "address_mode": "IMP",
+            "opcode": "A8"
+        },
+        {
+            "mnemonic": "LDA",
+            "address_mode": "IMM",
+            "opcode": "A9"
+        },
+        {
+            "mnemonic": "TAX",
+            "address_mode": "IMP",
+            "opcode": "AA"
+        },
+        {
+            "mnemonic": "LAX",
+            "address_mode": "IMM",
+            "opcode": "AB"
+        },
+        {
+            "mnemonic": "LDY",
+            "address_mode": "ABS",
+            "opcode": "AC"
+        },
+        {
+            "mnemonic": "LDA",
+            "address_mode": "ABS",
+            "opcode": "AD"
+        },
+        {
+            "mnemonic": "LDX",
+            "address_mode": "ABS",
+            "opcode": "AE"
+        },
+        {
+            "mnemonic": "LAX",
+            "address_mode": "ABS",
+            "opcode": "AF"
+        },
+        {
+            "mnemonic": "BCS",
+            "address_mode": "REL",
+            "opcode": "B0"
+        },
+        {
+            "mnemonic": "LDA",
+            "address_mode": "IZY",
+            "opcode": "B1"
+        },
+        {
+            "mnemonic": "KIL",
+            "address_mode": "IMP",
+            "opcode": "B2"
+        },
+        {
+            "mnemonic": "LAX",
+            "address_mode": "IZY",
+            "opcode": "B3"
+        },
+        {
+            "mnemonic": "LDY",
+            "address_mode": "ZPX",
+            "opcode": "B4"
+        },
+        {
+            "mnemonic": "LDA",
+            "address_mode": "ZPX",
+            "opcode": "B5"
+        },
+        {
+            "mnemonic": "LDX",
+            "address_mode": "ZPY",
+            "opcode": "B6"
+        },
+        {
+            "mnemonic": "LAX",
+            "address_mode": "ZPY",
+            "opcode": "B7"
+        },
+        {
+            "mnemonic": "CLV",
+            "address_mode": "IMP",
+            "opcode": "B8"
+        },
+        {
+            "mnemonic": "LDA",
+            "address_mode": "ABY",
+            "opcode": "B9"
+        },
+        {
+            "mnemonic": "TSX",
+            "address_mode": "IMP",
+            "opcode": "BA"
+        },
+        {
+            "mnemonic": "LAS",
+            "address_mode": "ABY",
+            "opcode": "BB"
+        },
+        {
+            "mnemonic": "LDY",
+            "address_mode": "ABX",
+            "opcode": "BC"
+        },
+        {
+            "mnemonic": "LDA",
+            "address_mode": "ABX",
+            "opcode": "BD"
+        },
+        {
+            "mnemonic": "LDX",
+            "address_mode": "ABY",
+            "opcode": "BE"
+        },
+        {
+            "mnemonic": "LAX",
+            "address_mode": "ABY",
+            "opcode": "BF"
+        },
+        {
+            "mnemonic": "CPY",
+            "address_mode": "IMM",
+            "opcode": "C0"
+        },
+        {
+            "mnemonic": "CMP",
+            "address_mode": "IZX",
+            "opcode": "C1"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "IMM",
+            "opcode": "C2"
+        },
+        {
+            "mnemonic": "DCP",
+            "address_mode": "IZX",
+            "opcode": "C3"
+        },
+        {
+            "mnemonic": "CPY",
+            "address_mode": "ZRP",
+            "opcode": "C4"
+        },
+        {
+            "mnemonic": "CMP",
+            "address_mode": "ZRP",
+            "opcode": "C5"
+        },
+        {
+            "mnemonic": "DEC",
+            "address_mode": "ZRP",
+            "opcode": "C6"
+        },
+        {
+            "mnemonic": "DCP",
+            "address_mode": "ZRP",
+            "opcode": "C7"
+        },
+        {
+            "mnemonic": "INY",
+            "address_mode": "IMP",
+            "opcode": "C8"
+        },
+        {
+            "mnemonic": "CMP",
+            "address_mode": "IMM",
+            "opcode": "C9"
+        },
+        {
+            "mnemonic": "DEX",
+            "address_mode": "IMP",
+            "opcode": "CA"
+        },
+        {
+            "mnemonic": "AXS",
+            "address_mode": "IMM",
+            "opcode": "CB"
+        },
+        {
+            "mnemonic": "CPY",
+            "address_mode": "ABS",
+            "opcode": "CC"
+        },
+        {
+            "mnemonic": "CMP",
+            "address_mode": "ABS",
+            "opcode": "CD"
+        },
+        {
+            "mnemonic": "DEC",
+            "address_mode": "ABS",
+            "opcode": "CE"
+        },
+        {
+            "mnemonic": "DCP",
+            "address_mode": "ABS",
+            "opcode": "CF"
+        },
+        {
+            "mnemonic": "BNE",
+            "address_mode": "REL",
+            "opcode": "D0"
+        },
+        {
+            "mnemonic": "CMP",
+            "address_mode": "IZY",
+            "opcode": "D1"
+        },
+        {
+            "mnemonic": "KIL",
+            "address_mode": "IMP",
+            "opcode": "D2"
+        },
+        {
+            "mnemonic": "DCP",
+            "address_mode": "IZY",
+            "opcode": "D3"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "ZPX",
+            "opcode": "D4"
+        },
+        {
+            "mnemonic": "CMP",
+            "address_mode": "ZPX",
+            "opcode": "D5"
+        },
+        {
+            "mnemonic": "DEC",
+            "address_mode": "ZPX",
+            "opcode": "D6"
+        },
+        {
+            "mnemonic": "DCP",
+            "address_mode": "ZPX",
+            "opcode": "D7"
+        },
+        {
+            "mnemonic": "CLD",
+            "address_mode": "IMP",
+            "opcode": "D8"
+        },
+        {
+            "mnemonic": "CMP",
+            "address_mode": "ABY",
+            "opcode": "D9"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "IMP",
+            "opcode": "DA"
+        },
+        {
+            "mnemonic": "DCP",
+            "address_mode": "ABY",
+            "opcode": "DB"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "ABX",
+            "opcode": "DC"
+        },
+        {
+            "mnemonic": "CMP",
+            "address_mode": "ABX",
+            "opcode": "DD"
+        },
+        {
+            "mnemonic": "DEC",
+            "address_mode": "ABX",
+            "opcode": "DE"
+        },
+        {
+            "mnemonic": "DCP",
+            "address_mode": "ABX",
+            "opcode": "DF"
+        },
+        {
+            "mnemonic": "CPX",
+            "address_mode": "IMM",
+            "opcode": "E0"
+        },
+        {
+            "mnemonic": "SBC",
+            "address_mode": "IZX",
+            "opcode": "E1"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "IMM",
+            "opcode": "E2"
+        },
+        {
+            "mnemonic": "ISC",
+            "address_mode": "IZX",
+            "opcode": "E3"
+        },
+        {
+            "mnemonic": "CPX",
+            "address_mode": "ZRP",
+            "opcode": "E4"
+        },
+        {
+            "mnemonic": "SBC",
+            "address_mode": "ZRP",
+            "opcode": "E5"
+        },
+        {
+            "mnemonic": "INC",
+            "address_mode": "ZRP",
+            "opcode": "E6"
+        },
+        {
+            "mnemonic": "ISC",
+            "address_mode": "ZRP",
+            "opcode": "E7"
+        },
+        {
+            "mnemonic": "INX",
+            "address_mode": "IMP",
+            "opcode": "E8"
+        },
+        {
+            "mnemonic": "SBC",
+            "address_mode": "IMM",
+            "opcode": "E9"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "IMP",
+            "opcode": "EA"
+        },
+        {
+            "mnemonic": "SBC",
+            "address_mode": "IMM",
+            "opcode": "EB"
+        },
+        {
+            "mnemonic": "CPX",
+            "address_mode": "ABS",
+            "opcode": "EC"
+        },
+        {
+            "mnemonic": "SBC",
+            "address_mode": "ABS",
+            "opcode": "ED"
+        },
+        {
+            "mnemonic": "INC",
+            "address_mode": "ABS",
+            "opcode": "EE"
+        },
+        {
+            "mnemonic": "ISC",
+            "address_mode": "ABS",
+            "opcode": "EF"
+        },
+        {
+            "mnemonic": "BEQ",
+            "address_mode": "REL",
+            "opcode": "F0"
+        },
+        {
+            "mnemonic": "SBC",
+            "address_mode": "IZY",
+            "opcode": "F1"
+        },
+        {
+            "mnemonic": "KIL",
+            "address_mode": "IMP",
+            "opcode": "F2"
+        },
+        {
+            "mnemonic": "ISC",
+            "address_mode": "IZY",
+            "opcode": "F3"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "ZPX",
+            "opcode": "F4"
+        },
+        {
+            "mnemonic": "SBC",
+            "address_mode": "ZPX",
+            "opcode": "F5"
+        },
+        {
+            "mnemonic": "INC",
+            "address_mode": "ZPX",
+            "opcode": "F6"
+        },
+        {
+            "mnemonic": "ISC",
+            "address_mode": "ZPX",
+            "opcode": "F7"
+        },
+        {
+            "mnemonic": "SED",
+            "address_mode": "IMP",
+            "opcode": "F8"
+        },
+        {
+            "mnemonic": "SBC",
+            "address_mode": "ABY",
+            "opcode": "F9"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "IMP",
+            "opcode": "FA"
+        },
+        {
+            "mnemonic": "ISC",
+            "address_mode": "ABY",
+            "opcode": "FB"
+        },
+        {
+            "mnemonic": "NOP",
+            "address_mode": "ABX",
+            "opcode": "FC"
+        },
+        {
+            "mnemonic": "SBC",
+            "address_mode": "ABX",
+            "opcode": "FD"
+        },
+        {
+            "mnemonic": "INC",
+            "address_mode": "ABX",
+            "opcode": "FE"
+        },
+        {
+            "mnemonic": "ISC",
+            "address_mode": "ABX",
+            "opcode": "FF"
+        }
+    ]
+}
